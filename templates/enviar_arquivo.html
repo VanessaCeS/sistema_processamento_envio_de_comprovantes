@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro Usuario</title>
+  <!-- <link rel="stylesheet" href="{{ url_for('static',    filename='css/formulario.css') }}"> -->
+  <link rel="stylesheet" href="../static/css/formulario.css">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link rel="icon" href="../static/img/icon-removebg-preview-1500.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body>
+  <div>
+    <iframe src="cabecalho.html" width="100%" frameborder="0"></iframe>
+    <!-- {% include 'cabecalho.html' %} -->
+  </div>
+
+  <div style="height: 400px;" class="formulario">
+    <h1 class="title" style="text-align: center;">Enviar Documentos</h1>
+    <form method="post">
+      <div class="box">
+        <form method="post">
+          <div class="field">
+            <div class="control">
+              <label for="">Data</label>
+              <br>
+              <input class="input" type="date" name="date" id='date' autofocus="" required>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <label for="">Arquivo PDF</label>
+              <br>
+              <input type="file" name="file_pdf" id='file_pdf' placeholder="Digite uma senha forte" required>
+            </div>
+          </div>
+          <button type="submit">Enviar</button>
+        </form>
+      </div>
+    </form>
+  </div>
+
+  {% if mensagem %}
+  <script>
+    Toastify({
+      text: "{{ mensagem }}",
+      duration: 5000,
+      destination: '/',
+      newWindow: true,
+      close: true,
+      gravity: "top",
+      position: "right",
+      backgroundColor: "{{color}}",
+      stopOnFocus: true,
+    }).showToast();
+  </script>
+  {% endif %}
+</body>
+
+</html>
