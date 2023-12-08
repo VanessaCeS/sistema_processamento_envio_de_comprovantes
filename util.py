@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from urllib.parse import unquote
 from unicodedata import normalize
 from zeep import Client, Settings, Transport
-
+import mysql.connector
 
 load_dotenv('.env')
 base_path = os.environ.get('base_projeto')
@@ -26,15 +26,17 @@ server = os.getenv('db_server_dev')
 database = os.getenv('db_database_dev')
 username = os.getenv('db_username_dev')
 password = os.getenv('db_password_dev')
+
+
 # ==============================================================================
 #   Funções do Banco de Dados
 # ==============================================================================
 def sql_integra_get(sql):
     conx = pymssql.connect(os.environ.get('db_server'),
-                        os.environ.get('db_username'),
-                        os.environ.get('db_password'),
-                        os.environ.get('database_integra')
-                        )
+                           os.environ.get('db_username'),
+                           os.environ.get('db_password'),
+                           os.environ.get('database_integra')
+                           )
 
     cursor = conx.cursor(as_dict=True)
 
@@ -49,10 +51,10 @@ def sql_integra_get(sql):
 
 def sql_integra_exec(sql, val):
     conx = pymssql.connect(os.environ.get('db_server'),
-                        os.environ.get('db_username'),
-                        os.environ.get('db_password'),
-                        os.environ.get('database_integra')
-                        )
+                           os.environ.get('db_username'),
+                           os.environ.get('db_password'),
+                           os.environ.get('database_integra')
+                           )
 
     cursor = conx.cursor()
 
@@ -62,7 +64,9 @@ def sql_integra_exec(sql, val):
 
     return True
 
+
 def get_token(user='integra.api'):
+    return '0F7CFC56B9FCB97905E605238496EA1C'
     sql = "SELECT token FROM archer_token WHERE users = '%s'" % user
     result = sql_integra_get(sql)
     return result[0]['token']
@@ -76,7 +80,8 @@ def execute_sql_integra(id_sistema_pagamento, dados, nomes):
     cursor.execute(table_exists)
 
     if cursor.fetchall():
-        cursor.execute("SELECT * FROM Integra.dbo.comprovantes_sap WHERE id_sistema_pagamento = %s ", (id_sistema_pagamento,))
+        cursor.execute("SELECT * FROM Integra.dbo.comprovantes_sap WHERE id_sistema_pagamento = %s ",
+                       (id_sistema_pagamento,))
         for i in range(len(dados)):
             if dados[i] == '':
                 dados[i] = None
@@ -106,6 +111,18 @@ def execute_sql_integra(id_sistema_pagamento, dados, nomes):
             except Exception as e:
                 print("Error ==> ", e)
                 print("Caminho ==> ", traceback.print_exc())
+
+
+# Conectar ao banco de dados
+# Conectar ao banco de dados
+def connector_precatorio_banco():
+    conn = mysql.connector.connect(
+        host=os.getenv('db_server_precatorio'),
+        user=os.getenv('db_username_precatorio'),
+        password=os.getenv('db_password_precatorio'),
+        database='precatorias_tribunais'
+    )
+    return conn
 
 
 # ==============================================================================
@@ -155,9 +172,9 @@ def get_atach_rest(atach_id, folder):
     s.proxies = {'http': 'http://127.0.0.1:8888', 'https': 'http://127.0.0.1:8888'}
     s.verify = "C:\\Users\\User\\Documents\\charles.pem"
     s.headers = {'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8',
-                'Authorization': 'Archer session-id=' + get_token(),
-                'Content-Type': 'application/json',
-                'X-Http-Method-Override': 'GET'}
+                 'Authorization': 'Archer session-id=' + get_token(),
+                 'Content-Type': 'application/json',
+                 'X-Http-Method-Override': 'GET'}
     result = s.post(endpoint).json()['RequestedObject']
     bytes = b64decode(result['AttachmentBytes'], validate=True)
 
@@ -171,6 +188,19 @@ def get_atach_rest(atach_id, folder):
     f.close()
 
     return nome_arquivo
+
+
+def get_atach_rest_base(atach_id):
+    endpoint = 'https://att.costaesilvaadv.com.br/RSAarcher/platformapi/core/content/attachment/' + atach_id
+    s = Session()
+    s.proxies = {'http': 'http://127.0.0.1:8888', 'https': 'http://127.0.0.1:8888'}
+    s.verify = "C:\\Users\\User\\Documents\\charles.pem"
+    s.headers = {'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8',
+                 'Authorization': 'Archer session-id=' + get_token(),
+                 'Content-Type': 'application/json',
+                 'X-Http-Method-Override': 'GET'}
+    result = s.post(endpoint).json()['RequestedObject']
+    return result['AttachmentBytes']
 
 
 # ==============================================================================
@@ -263,21 +293,21 @@ def download_pep(id_pagamento, file_name, scpjud=False, token=get_token()):
         s = Session()
         # s.verify = False
         s.headers = {'Connection': 'keep-alive',
-                    'Pragma': 'no-cache',
-                    'Cache-Control': 'no-cache',
-                    'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="100", "Google Chrome";v="100"',
-                    'sec-ch-ua-mobile': '?0',
-                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-MicrosoftAjax': 'Delta=true',
-                    'sec-ch-ua-platform': '"Linux"',
-                    'Accept': '*/*',
-                    'Origin': 'https://arteria.costaesilvaadv.com.br',
-                    'Sec-Fetch-Site': 'same-origin',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Accept-Language': 'en-US,en;q=0.9'}
+                     'Pragma': 'no-cache',
+                     'Cache-Control': 'no-cache',
+                     'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="100", "Google Chrome";v="100"',
+                     'sec-ch-ua-mobile': '?0',
+                     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36',
+                     'X-Requested-With': 'XMLHttpRequest',
+                     'X-MicrosoftAjax': 'Delta=true',
+                     'sec-ch-ua-platform': '"Linux"',
+                     'Accept': '*/*',
+                     'Origin': 'https://arteria.costaesilvaadv.com.br',
+                     'Sec-Fetch-Site': 'same-origin',
+                     'Sec-Fetch-Mode': 'cors',
+                     'Sec-Fetch-Dest': 'empty',
+                     'Accept-Encoding': 'gzip, deflate, br',
+                     'Accept-Language': 'en-US,en;q=0.9'}
         # s.verify = False
         s.cookies.update({"__ArcherSessionCookie__": token})
     reports = s.post(
@@ -287,11 +317,11 @@ def download_pep(id_pagamento, file_name, scpjud=False, token=get_token()):
 
     s.headers.update({
         'Referer': f'https://arteria.costaesilvaadv.com.br/RSAarcher/GenericContent/Record.aspx?id'
-                f'={id_pagamento}&moduleId=445&pr=&frameWidthHeight=1600,690'})
+                   f'={id_pagamento}&moduleId=445&pr=&frameWidthHeight=1600,690'})
 
     url_export = 'https://arteria.costaesilvaadv.com.br/RSAarcher/GenericContent/ExportReportCreation.aspx?contentId' \
-                f'={id_pagamento}&levelId=242&exportSourceType=RecordView&exportType=Rtf&moduleName=Pagamento&templateId={templateId}' \
-                '&layoutId=531&et=0'
+                 f'={id_pagamento}&levelId=242&exportSourceType=RecordView&exportType=Rtf&moduleName=Pagamento&templateId={templateId}' \
+                 '&layoutId=531&et=0'
 
     get_export = s.get(url_export)
     s.headers.update({'Referer': url_export})
@@ -355,8 +385,8 @@ def convert_doc_to_pdf(doc):
 
 def remover_acentos_espacos_pontos_tracos_e_barras(txt):
     return normalize("NFKD",
-                    txt.replace(" ", "").replace("&", "E").replace(".", "").replace("-", "").replace("/", "").replace(
-                        ",", "")).encode("ASCII", "ignore").decode("ASCII").upper()
+                     txt.replace(" ", "").replace("&", "E").replace(".", "").replace("-", "").replace("/", "").replace(
+                         ",", "")).encode("ASCII", "ignore").decode("ASCII").upper()
 
 
 def close_excel():
@@ -369,40 +399,40 @@ def close_excel():
 def texto_honorario_para_resumo_capa(tipo):
     if tipo == "CAIXA SEGURADORA S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE HONORÁRIOS ADVOCATÍCIOS EM PROCESSO DA SEGURADORA ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA VIDA E PREVIDÊNCIA S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE HONORÁRIOS ADVOCATÍCIOS EM PROCESSO DA VIDA E PREVIDÊNCIA ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA CAPITALIZAÇÃO S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE HONORÁRIOS ADVOCATÍCIOS EM PROCESSO DA CAPITALIZAÇÃO ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA CONSÓRCIOS S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE HONORÁRIOS ADVOCATÍCIOS EM PROCESSO DO CONSÓRCIO ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA SEGURADORA ESPECIALIZADA EM SAÚDE":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE HONORÁRIOS ADVOCATÍCIOS EM PROCESSO DA SEGURADORA ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "XS2 VIDA & PREVIDENCIA S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE HONORÁRIOS ADVOCATÍCIOS EM PROCESSO DA XS2 VIDA E PREVIDÊNCIA " \
-            "ABAIXO RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "ABAIXO RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
 
 
 def texto_reembolso_para_resumo_capa(tipo):
     if tipo == "CAIXA SEGURADORA S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE REEMBOLSO EM PROCESSO DA SEGURADORA ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA VIDA E PREVIDÊNCIA S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE REEMBOLSO EM PROCESSO DA VIDA E PREVIDÊNCIA ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA CAPITALIZAÇÃO S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE REEMBOLSO EM PROCESSO DA CAPITALIZAÇÃO ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA CONSÓRCIOS S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE REEMBOLSO EM PROCESSO DO CONSÓRCIO ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "CAIXA SEGURADORA ESPECIALIZADA EM SAÚDE":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE REEMBOLSO EM PROCESSO DA SEGURADORA ABAIXO " \
-            "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
     if tipo == "XS2 VIDA & PREVIDENCIA S/A":
         return "RESUMO: REFERE-SE AO PAGAMENTO DE REEMBOLSO EM PROCESSO DA XS2 VIDA E PREVIDÊNCIA " \
-            "ABAIXO RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "
+               "ABAIXO RELACIONADO, DE INTERESSE DAS EMPRESAS DO GRUPO CAIXA SEGUROS. "

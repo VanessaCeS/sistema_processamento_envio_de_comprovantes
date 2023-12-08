@@ -1,13 +1,12 @@
 import logging
 import json
+import traceback
+
 import requests
+from util import get_token
 from .user import User
 from .record import Record
 from concurrent.futures import ThreadPoolExecutor
-import warnings
-
-warnings.filterwarnings("ignore", message="Unverified HTTPS request")
-# ssl.SSLContext.verify_mode = property(lambda self: ssl.CERT_NONE, lambda self, newval: None)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 log = logging.getLogger(__name__)
@@ -15,17 +14,17 @@ log = logging.getLogger(__name__)
 
 # PART BELOW IS USING ARCHER REST API
 
-
 class ArcherInstance:
     """
-    Creates archer instance object using following arguments:
-            :param inst_url - archer instance base url
-            :param instance_name - archer instance name
-            :param username - of api user
-            :param password - of api user
-    """
+	Creates archer instance object using following arguments:
+		:param inst_url - archer instance base url
+		:param instance_name - archer instance name
+		:param username - of api user
+		:param password - of api user
+	"""
 
     def __init__(self, inst_url, instance_name, username, password, token=""):
+
         self.api_url_base = f"{inst_url}/RSAarcher/api/"
         self.content_api_url_base = f"{inst_url}/RSAarcher/contentapi/"
         self.username = username
@@ -33,7 +32,7 @@ class ArcherInstance:
         self.instance_name = instance_name
         self.fields = {}
 
-        self.session_token = token
+        self.session_token = token if token else ''#get_token()  # get_token(username, instance_name)
         self.header = ""
         self.url = ""
 
@@ -44,7 +43,6 @@ class ArcherInstance:
         self.vl_name_to_vl_id = {}
         self.subforms_json_by_sf_name = {}
         self.key_field_value_to_system_id = {}
-        self.field_value_list = {}
 
         self.archer_groups_name_to_id = {}
         if not self.session_token:
@@ -54,31 +52,48 @@ class ArcherInstance:
                 "Accept": "application/json,text/html,application/xhtml+xml,application/xml;q =0.9,*/*;q=0.8",
                 "Content-type": "application/json",
                 "Authorization": "Archer session-id={0}".format(self.session_token),
-                "Connection": "close",
-                "X-Http-Method-Override": "GET",
-            }
+                "X-Http-Method-Override": "GET"}
+
+    def get_history_register_by_field(self, register_id, field_name):
+        """
+        		:param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
+        							  "and LastLoginDate eq null&$orderby=LastName"
+        		:returns list of User objects
+        		"""
+
+        api_url = f"{self.api_url_base}core/content/history/{register_id}"
+
+        try:
+            response = requests.post(api_url, headers=self.header)
+
+            data = json.loads(response.content.decode("utf-8"))
+            field_id = self.get_field_id_by_name(field_name)
+            olds_values = []
+            if data:
+                for history in data[0]['RequestedObject']['HistoryAudits']:
+                    for filds_history, values in history['FieldHistory'].items():
+                        if filds_history == str(field_id):
+                            if values['OriginalValue']:
+                                if values['OriginalValue'] not in olds_values:
+                                    olds_values.append(values['OriginalValue'])
+
+
+            return olds_values
+        except Exception as e:
+            ''  # log.error("Function get_users didn't work, %s", e)
 
     def get_session_token(self):
         """
-        Refresh Session Token, should be invoked periodically
-        """
+		Refresh Session Token, should be invoked periodically
+		"""
 
         api_url = f"{self.api_url_base}core/security/login"
-        header = {
-            "Accept": "application/json,text/html,application/xhtml+xml,application/xml;q =0.9,*/*;q=0.8",
-            "Content-type": "application/json",
-        }
+        header = {"Accept": "application/json,text/html,application/xhtml+xml,application/xml;q =0.9,*/*;q=0.8",
+                  "Content-type": "application/json"}
         try:
-            response = requests.post(
-                api_url,
-                headers=header,
-                json={
-                    "InstanceName": self.instance_name,
-                    "Username": self.username,
-                    "UserDomain": "",
-                    "Password": self.password,
-                },
-            )
+            response = requests.post(api_url, headers=header, json={"InstanceName": self.instance_name,
+                                                                    "Username": self.username, "UserDomain": "",
+                                                                    "Password": self.password})
 
             data = json.loads(response.content.decode("utf-8"))
 
@@ -87,18 +102,17 @@ class ArcherInstance:
                 "Accept": "application/json,text/html,application/xhtml+xml,application/xml;q =0.9,*/*;q=0.8",
                 "Content-type": "application/json",
                 "Authorization": "Archer session-id={0}".format(self.session_token),
-                "X-Http-Method-Override": "GET",
-            }
+                "X-Http-Method-Override": "GET"}
 
         except Exception as e:
-            raise e
+            ''  # log.error("Request for Archer session token failed, %s", e)
 
     def get_users_by_group(self, group_id, params="", name=None):
         """
-        :param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
-                                                  "and LastLoginDate eq null&$orderby=LastName"
-        :returns list of User objects
-        """
+		:param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
+							  "and LastLoginDate eq null&$orderby=LastName"
+		:returns list of User objects
+		"""
 
         api_url = f"{self.api_url_base}core/system/user/group/{group_id}" + params
 
@@ -113,14 +127,14 @@ class ArcherInstance:
             return [list_of_users, name]
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_users didn't work, %s", e)
 
     def get_groups_by_user(self, user_id, params="", name=None):
         """
-        :param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
-                                                  "and LastLoginDate eq null&$orderby=LastName"
-        :returns list of User objects
-        """
+		:param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
+							  "and LastLoginDate eq null&$orderby=LastName"
+		:returns list of User objects
+		"""
 
         api_url = f"{self.api_url_base}core/system/group/user/{user_id}"
 
@@ -131,19 +145,19 @@ class ArcherInstance:
             list_of_groups = []
             for user in data:
                 if user["IsSuccessful"]:
-                    list_of_groups.append(user["RequestedObject"]["Name"])
+                    list_of_groups.append(user['RequestedObject']['Name'])
 
             return list_of_groups
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_users didn't work, %s", e)
 
     def get_users(self, params=""):
         """
-        :param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
-                                                  "and LastLoginDate eq null&$orderby=LastName"
-        :returns list of User objects
-        """
+		:param params: like "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
+							  "and LastLoginDate eq null&$orderby=LastName"
+		:returns list of User objects
+		"""
 
         api_url = f"{self.api_url_base}core/system/user/" + params
 
@@ -158,12 +172,12 @@ class ArcherInstance:
             return list_of_users
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_users didn't work, %s", e)
 
     def get_all_groups(self):
         """
-        :return: populate Archer_instance object with json >  self.archer_groups_name_to_id[name] = id
-        """
+		:return: populate Archer_instance object with json >  self.archer_groups_name_to_id[name] = id
+		"""
         api_url = f"{self.api_url_base}core/system/group/"
 
         try:
@@ -173,17 +187,17 @@ class ArcherInstance:
                 name = group["RequestedObject"]["Name"]
                 id = group["RequestedObject"]["Id"]
                 self.archer_groups_name_to_id[name] = id
-            log.info("Groups are downloaded")
+            ''  # log.info("Groups are downloaded")
             return self
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_all_groups didn't work, %s", e)
 
     def find_group(self, name=None):
         """
-        :param name: possible name of the group
-        :return: True if name exist and False if name is not found, also prints existing or similar groups
-        """
+		:param name: possible name of the group
+		:return: True if name exist and False if name is not found, also prints existing or similar groups
+		"""
         not_found = ""
         found = ""
 
@@ -208,12 +222,12 @@ class ArcherInstance:
 
     def get_group_id(self, group_name):
         """
-        :param group_name: Name of Archer Group
-        :return: the name, or False and prints all groups
-        """
+		:param group_name: Name of Archer Group
+		:return: the name, or False and prints all groups
+		"""
         try:
             return self.archer_groups_name_to_id[group_name]
-        except Exception as e:
+        except:
             print("No such name, try...")
             for key in self.archer_groups_name_to_id.keys():
                 print(key, ", ", end="")
@@ -222,9 +236,9 @@ class ArcherInstance:
 
     def get_user_by_id(self, user_id):
         """
-        :param user_id: internal Archer user id
-        :return: User object
-        """
+		:param user_id: internal Archer user id
+		:return: User object
+		"""
         api_url = f"{self.api_url_base}core/system/user/" + str(user_id)
 
         try:
@@ -234,28 +248,22 @@ class ArcherInstance:
             return User(self, data)
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_user_by_id didn't work, %s", e)
 
     def get_active_users_with_no_login(self):
         """
-        :return: list of User objects
-        """
-        return self.get_users(
-            "?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
-            "and LastLoginDate eq null&$orderby=LastName"
-        )
+		:return: list of User objects
+		"""
+        return self.get_users("?$select=Id,UserName,DisplayName&$filter=AccountStatus eq '1' "
+                              "and LastLoginDate eq null&$orderby=LastName")
 
     def from_application(self, app_name=None):
         """
-        :param app_name: sets app you will be working on; type name how it appears in Archer
-        :return: self, fills Archer_instance object with proper app_id and fields_ids
-        """
+		:param app_name: sets app you will be working on; type name how it appears in Archer
+		:return: self, fills Archer_instance object with proper app_id and fields_ids
+		"""
         api_url = f"{self.api_url_base}core/system/application/"
-        if (
-                not self.current_application
-                or self.current_application != app_name
-                and self.current_application
-        ):
+        if not self.current_application or self.current_application != app_name and self.current_application:
             try:
                 response = requests.get(api_url, headers=self.header)
                 data = json.loads(response.content.decode("utf-8"))
@@ -271,38 +279,29 @@ class ArcherInstance:
                         self.module_id = application_id
                         self.get_application_fields(application_id)
                         break
-                    all_folders.append(
-                        [
-                            application["RequestedObject"]["Name"],
-                            application["RequestedObject"]["Id"],
-                        ]
-                    )
+                    all_folders.append([application["RequestedObject"]["Name"], application["RequestedObject"]["Id"]])
 
                 if not application_id:
                     raise RuntimeError(
-                        f'Application "{app_name}" is not found, available applications are {all_folders}'
-                    )
+                        f'Application "{app_name}" is not found, available applications are {all_folders}')
                 self.get_all_fields_value_lists()
 
             except Exception as e:
-                raise e
+                ''  # log.error("Function from_application() didn't work, %s", e)
         self.current_application = app_name
         return self
 
     def get_application_fields(self, application_id):
         """
-        :param application_id: Internal Archer application id, I found it in LevelId if I remember correctly
-        :return: Fills the object with all active application fields:
-                        all_application_fields_array - array of active fields [id1, id2, id3]
-                        application_fields_json - {{name:id}, {id: {"Type": f_type, "FieldId": id}}}
-                        subforms_json_by_sf_name - {subform_name: {name:id}, {id: {"Type": f_type, "FieldId": id}},{"LevelId": level_id})
-        """
+		:param application_id: Internal Archer application id, I found it in LevelId if I remember correctly
+		:return: Fills the object with all active application fields:
+				all_application_fields_array - array of active fields [id1, id2, id3]
+				application_fields_json - {{name:id}, {id: {"Type": f_type, "FieldId": id}}}
+				subforms_json_by_sf_name - {subform_name: {name:id}, {id: {"Type": f_type, "FieldId": id}},{"LevelId": level_id})
+		"""
 
-        api_url = (
-                f"{self.api_url_base}core/system/fielddefinition/application/"
-                + str(application_id)
-                + "?$filter=IsActive eq true"
-        )
+        api_url = f"{self.api_url_base}core/system/fielddefinition/application/" + str(
+            application_id) + "?$filter=IsActive eq true"
 
         try:
             response = requests.get(api_url, headers=self.header)
@@ -316,46 +315,31 @@ class ArcherInstance:
 
                 self.all_application_fields_array.append(id)
                 self.application_fields_json.update({name: id})
-                self.application_fields_json.update(
-                    {id: {"Type": f_type, "FieldId": id}}
-                )
+                self.application_fields_json.update({id: {"Type": f_type, "FieldId": id}})
 
                 if f_type == 4:  # populate values for values list
-                    self.vl_name_to_vl_id.update(
-                        {name: field["RequestedObject"]["RelatedValuesListId"]}
-                    )
+                    self.vl_name_to_vl_id.update({name: field["RequestedObject"]["RelatedValuesListId"]})
 
                 elif f_type == 24:  # populate fileds from subforms, up to text fields
                     subform_name = field["RequestedObject"]["Name"]
                     subform_id = field["RequestedObject"]["RelatedSubformId"]
-                    subform_fields_json, all_fields = self.get_subform_fields_by_id(
-                        subform_id
-                    )
-                    self.subforms_json_by_sf_name.update(
-                        {subform_name: subform_fields_json}
-                    )
-                    self.subforms_json_by_sf_name[subform_name].update(
-                        {"AllFields": all_fields}
-                    )
+                    subform_fields_json, all_fields = self.get_subform_fields_by_id(subform_id)
+                    self.subforms_json_by_sf_name.update({subform_name: subform_fields_json})
+                    self.subforms_json_by_sf_name[subform_name].update({"AllFields": all_fields})
 
-            self.application_level_id = str(
-                level_id
-            )  # set the application ID, I found it here
+            self.application_level_id = str(level_id)  # set the application ID, I found it here
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_application_fields() didn't work, %s", e)
 
     def get_subform_fields_by_id(self, sub_form_id):
         """
-        :param sub_form_id: Gets from parent application field ("RelatedValuesListId"). Note:
-                                                                        I was only interested in text fields and attachments
-        :return: {{name:id}, {id: {"Type": f_type, "FieldId": id}, {"LevelId": level_id}}}
-        """
-        api_url = (
-                f"{self.api_url_base}core/system/fielddefinition/application/"
-                + str(sub_form_id)
-                + "?$filter=IsActive eq true"
-        )
+		:param sub_form_id: Gets from parent application field ("RelatedValuesListId"). Note:
+		 								I was only interested in text fields and attachments
+		:return: {{name:id}, {id: {"Type": f_type, "FieldId": id}, {"LevelId": level_id}}}
+		"""
+        api_url = f"{self.api_url_base}core/system/fielddefinition/application/" + str(
+            sub_form_id) + "?$filter=IsActive eq true"
 
         try:
             response = requests.get(api_url, headers=self.header)
@@ -366,10 +350,6 @@ class ArcherInstance:
                 f_name = field["RequestedObject"]["Name"]
                 id = field["RequestedObject"]["Id"]
                 f_type = field["RequestedObject"]["Type"]
-                if f_type == 4:  # populate values for values list
-                    self.vl_name_to_vl_id.update(
-                        {f_name: field["RequestedObject"]["RelatedValuesListId"]}
-                    )
                 level_id = field["RequestedObject"]["LevelId"]
                 fields_ids.append(id)
                 subform_fields_names.update({f_name: id})
@@ -378,13 +358,57 @@ class ArcherInstance:
             return subform_fields_names, fields_ids
 
         except Exception as e:
-            raise e
+            ''  # log.error("Function get_subform_fields_by_id didn't work, %s", e)
+
+    def get_workflow_action(self, record_id):
+        """
+		:param record_id: internal archer record id
+		:return: record object
+		"""
+        api_url = f"{self.api_url_base}core/system/WorkflowAction/" + str(record_id)
+        # cont_id = [str(record_id)]
+        # body = json.dumps({"FieldIds": self.all_application_fields_array, "ContentIds": cont_id})
+
+        post_header = dict(self.header)
+        post_header["X-Http-Method-Override"] = "GET"
+
+        try:
+            response = requests.post(api_url, headers=post_header)
+            data = response.json()
+
+            return data["RequestedObject"]
+
+        except Exception as e:
+            print("Function get_workflow_action didn't work, %s", e)
+            ''  # log.error("Function get_record() didn't work, %s", e)
+
+    def save_workflow_action(self, record_id, node_id, completion_code):
+        """
+		:param record_id: internal archer record id
+		:return: record object
+		"""
+        api_url = f"{self.api_url_base}core/system/WorkflowAction"
+        # cont_id = [str(record_id)]
+        body = json.dumps(
+            {"ContentId": int(record_id), "CompletionCode": int(completion_code), "WorkflowNodeId": node_id})
+
+        post_header = dict(self.header)
+        del post_header["X-Http-Method-Override"]
+
+        try:
+            response = requests.post(api_url, headers=post_header, data=body)
+            if response.text == 'null':
+                return True
+            else:
+                return False
+        except Exception as e:
+            ''  # log.error("Function get_record() didn't work, %s", e)
 
     def get_vl_id_by_field_name(self, vl_field_name):
         """
-        :param vl_field_name: values list name
-        :return: vl_id
-        """
+		:param vl_field_name: values list name
+		:return: vl_id
+		"""
         return self.vl_name_to_vl_id[vl_field_name]
 
     def get_field_options(self, field_name):
@@ -397,8 +421,6 @@ class ArcherInstance:
 
         try:
             response = requests.get(api_url, headers=self.header)
-            if not response.ok:
-                return {}
             data = json.loads(response.content.decode("utf-8"))
             self.fields[field_name] = {}
             for value_id in data:
@@ -407,45 +429,34 @@ class ArcherInstance:
                 ]["Id"]
             return self.fields[field_name]
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise e #traceback.print_exc()  # log.error("Function get_value_id_by_field_name_and_value didn't work, %s", e)
-
+            raise e
     def get_all_fields_value_lists(self):
         with ThreadPoolExecutor(max_workers=20) as executor:
             for _ in executor.map(self.get_field_options, self.vl_name_to_vl_id):
                 pass
-        # for field_name in self.vl_name_to_vl_id:
-        #     self.get_field_options(field_name)
 
     def get_value_id_by_field_name_and_value(self, field_name, value):
-        raise NotImplementedError
-        return self.fields[field_name][value]
-        # values_list_id = self.get_vl_id_by_field_name(field_name)
-        # api_url = self.api_url_base + "core/system/valueslistvalue/flat/valueslist/" + str(values_list_id)
-        #
-        # try:
-        # 	if values_list_id not in self.field_value_list:
-        # 		response = requests.get(api_url, headers=self.header)
-        # 		data = json.loads(response.content.decode("utf-8"))
-        # 		self.field_value_list[values_list_id] = data
-        #
-        # 	for ind_value in self.field_value_list[values_list_id]:
-        # 		if ind_value["RequestedObject"]["Name"] == value:
-        # 			# ret_arr = []
-        # 			# ret_arr.append(ind_value["RequestedObject"]["Id"])
-        # 			# return ret_arr
-        # 			return [ind_value["RequestedObject"]["Id"]]
+        values_list_id = self.get_vl_id_by_field_name(field_name)
+        api_url = self.api_url_base + "core/system/valueslistvalue/flat/valueslist/" + str(values_list_id)
 
-        # except Exception as e:
-        # 	raise e #traceback.print_exc()#log.error("Function get_value_id_by_field_name_and_value didn't work, %s", e)
+        try:
+            response = requests.get(api_url, headers=self.header)
+            data = json.loads(response.content.decode("utf-8"))
+            for ind_value in data:
+                if ind_value["RequestedObject"]["Name"] == value:
+                    ret_arr = []
+                    ret_arr.append(ind_value["RequestedObject"]["Id"])
+                    return ret_arr
+
+        except Exception as e:
+            ''  # log.error("Function get_value_id_by_field_name_and_value didn't work, %s", e)
 
     def get_field_id_by_name(self, field_name, sub_form_name=None):
         """
-        :param sub_form_name: Add only if you need id of a subform of application, how you see it on the app
-        :param field_name: How you see it in app
-        :return: field_id
-        """
+		:param sub_form_name: Add only if you need id of a subform of application, how you see it on the app
+		:param field_name: How you see it in app
+		:return: field_id
+		"""
         if sub_form_name:
             return self.subforms_json_by_sf_name[sub_form_name][field_name]
         else:
@@ -453,9 +464,9 @@ class ArcherInstance:
 
     def add_value_to_field(self, id, value_content):
         """
-        :param id: uniques internal Archer field_id
-        :param value_content: could be text, [value for vl], [sub_record_content_id1, sub_record_content_id2, ...]
-        """
+		:param id: uniques internal Archer field_id
+		:param value_content: could be text, [value for vl], [sub_record_content_id1, sub_record_content_id2, ...]
+		"""
         template_for_field_update = dict(self.application_fields_json[id])
         template_for_field_update["Value"] = value_content
         return template_for_field_update
@@ -463,82 +474,70 @@ class ArcherInstance:
     def create_content_record(self, fields_json, record_id=None):
         # print(self.application_level_id)
         """
-        :param fields_json: {field name how you see it in the app: value content
-                                                                        (for text it text, for others it's internal unique ids)}
-        :param record_id:
-        :returns int - record_id
-        """
+		:param fields_json: {field name how you see it in the app: value content
+										(for text it text, for others it's internal unique ids)}
+		:param record_id:
+		:returns int - record_id
+		"""
         api_url = f"{self.api_url_base}core/content/"
         post_header = dict(self.header)
 
         transformed_json = {}
-        for key in fields_json.keys():
-            current_key_id = self.get_field_id_by_name(key)
-            if self.application_fields_json[current_key_id]["Type"] == 4:
-                if not isinstance(fields_json[key], list):
-                    fields_json[key] = [fields_json[key]]
-                for id_v in fields_json[key]:
-                    if isinstance(id_v, str):
-                        if id_v.isnumeric():
-                            fields_json[key][fields_json[key].index(id_v)] = int(id_v)
-                        else:
-                            fields_json[key][
-                                fields_json[key].index(id_v)
-                            ] = self.fields[key][id_v]
-                fields_json[key] = {"ValuesListIds": fields_json[key]}
-            elif self.application_fields_json[current_key_id]["Type"] == 9:
-                if not isinstance(fields_json[key], list):
-                    fields_json[key] = [fields_json[key]]
-                list_ids = []
-                for id_v in fields_json[key]:
-                    if isinstance(id_v, str):
-                        if id_v.isnumeric():
-                            id_v = int(id_v)
-                    list_ids.append({"ContentID": id_v})
-                fields_json[key] = list_ids
-            transformed_json[current_key_id] = self.add_value_to_field(
-                current_key_id, fields_json[key]
-            )
+        try:
+            for key in fields_json.keys():
+                current_key_id = self.get_field_id_by_name(key)
+                if self.application_fields_json[current_key_id]['Type'] == 4:
+                    if not isinstance(fields_json[key], list):
+                        fields_json[key] = [fields_json[key]]
+                    for id_v in fields_json[key]:
+                        try:
+                            if isinstance(id_v, str):
+                                if id_v.isnumeric():
+                                    fields_json[key][fields_json[key].index(id_v)] = int(id_v)
+                                else:
+                                    fields_json[key][fields_json[key].index(id_v)] = \
+                                        self.get_value_id_by_field_name_and_value(key, id_v)[0]
+                        except:
+                            print(f'Erro registro não encontrado no campo:{key} valor da lista procurado: {id_v}')
+                    fields_json[key] = {"ValuesListIds": fields_json[key]}
+                elif self.application_fields_json[current_key_id]['Type'] == 9:
+                    if not isinstance(fields_json[key], list):
+                        fields_json[key] = [fields_json[key]]
+                    list_ids = []
+                    for id_v in fields_json[key]:
+                        if isinstance(id_v, str):
+                            if id_v.isnumeric():
+                                id_v = int(id_v)
+                        list_ids.append({"ContentID": id_v})
+                    fields_json[key] = list_ids
+                transformed_json[current_key_id] = self.add_value_to_field(current_key_id, fields_json[key])
+        except Exception as e:
+            raise Exception(e)
 
         if record_id:
             post_header["X-Http-Method-Override"] = "PUT"
-            body = json.dumps(
-                {
-                    "Content": {
-                        "Id": record_id,
-                        "LevelId": self.application_level_id,
-                        "FieldContents": transformed_json,
-                    }
-                }
-            )
+            body = json.dumps({"Content": {"Id": record_id,
+                                           "LevelId": self.application_level_id,
+                                           "FieldContents": transformed_json}})
         else:
             post_header["X-Http-Method-Override"] = "POST"
-            body = json.dumps(
-                {
-                    "Content": {
-                        "LevelId": self.application_level_id,
-                        "FieldContents": transformed_json,
-                    }
-                }
-            )
+            body = json.dumps({"Content": {"LevelId": self.application_level_id, "FieldContents": transformed_json}})
 
         try:
             if record_id:
                 response = requests.put(api_url, headers=post_header, data=body)
                 data = json.loads(response.content.decode("utf-8"))
+                ''  # log.info("Record updated, %s", data["RequestedObject"]["Id"])
             else:
                 response = requests.post(api_url, headers=post_header, data=body)
                 data = json.loads(response.content.decode("utf-8"))
-            if data["RequestedObject"]:
-                log.info("Record updated, %s", data["RequestedObject"]["Id"]) if record_id else log.info("Function create_content_record created record, %s", data["RequestedObject"]["Id"])
+                ''  # log.info("Function create_content_record created record, %s", data["RequestedObject"]["Id"])
 
-                return data["RequestedObject"]["Id"], "Sucesso"
-            else:
-                return None, data["ValidationMessages"][0]["ResourcedMessage"]
+            return data["RequestedObject"]["Id"]
 
         except Exception as e:
-            raise e #traceback.print_exc()
-            "a"  # log.info("Function create_content_record didn't work, %s", e)
+            raise Exception(e)
+            ''  # log.info("Function create_content_record didn't work, %s", e)
 
     def create_sub_record(self, fields_json, subform_name, record_id=None):
         """LevelID is an application
@@ -554,7 +553,7 @@ class ArcherInstance:
         subform_field_id = self.get_field_id_by_name(subform_name)
 
         transformed_json = {}
-
+        
         for key in fields_json.keys():
             if not fields_json[key]:
                 continue
@@ -586,7 +585,7 @@ class ArcherInstance:
                 current_json["Value"] = fields_json[key]
             subform_level_id = self.subforms_json_by_sf_name[subform_name]["LevelId"]
             transformed_json.update({current_id: current_json})
-
+        
         if record_id:
             post_header["X-Http-Method-Override"] = "PUT"
             body = json.dumps(
@@ -622,93 +621,93 @@ class ArcherInstance:
             return data["RequestedObject"]["Id"]
 
         except Exception as e:
-            raise e #traceback.print_exc()  # log.error("Function create_sub_record didn't work, %s", e)
+            raise e
+        
 
     def delete_record(self, record_id=None):
         """
-        :param record_id:
-        """
+		:param record_id:
+		"""
         api_url = f"{self.api_url_base}core/content/" + str(record_id)
         post_header = dict(self.header)
 
         if record_id:
             post_header["X-Http-Method-Override"] = "DELETE"
-            body = json.dumps(
-                {"Content": {"Id": record_id, "LevelId": self.application_level_id}}
-            )
+            body = json.dumps({"Content": {"Id": record_id, "LevelId": self.application_level_id}})
         else:
-            log.info("Unable to delete content without provided record_id")
+            ''  # log.info("Unable to delete content without provided record_id")
 
         try:
             if record_id:
                 response = requests.delete(api_url, headers=post_header, data=body)
                 data = json.loads(response.content.decode("utf-8"))
-                if data["IsSuccessful"]:
-                    log.info("Function delete_content_record deleted record")
-                    return True
-                else:
-                    log.error(
-                        "Function delete_content_record didn't work, %s",
-                        data["ValidationMessages"]["ResourcedMessage"],
-                    )
+                ''  # log.info("Function delete_content_record deleted record")
             else:
-                log.info("Unable to delete record without provided record_id")
+                ''  # log.info("Unable to delete record without provided record_id")
 
         except Exception as e:
-            log.info("Function delete_content_record didn't worked, %s", e)
+            ''  # log.info("Function delete_content_record didn't worked, %s", e)
 
+    
+        
     def post_attachment(self, name, base64_string):
         """
-        :param name: Name of the attachment
-        :param base64_string: File in base64_string
-        :return:
-        """
+		:param name: Name of the attachment
+		:param base64_string: File in base64_string
+		:return:
+		"""
+        name = self.nome_sem_caminho_arquivo(name)
         api_url = f"{self.api_url_base}core/content/attachment"
         post_header = dict(self.header)
         post_header["X-Http-Method-Override"] = "POST"
         body = json.dumps({"AttachmentName": name, "AttachmentBytes": base64_string})
-
+        
         try:
             response = requests.post(api_url, headers=post_header, data=body)
             data = response.json()
 
-            log.info("Attachment %s posted to Archer", data["RequestedObject"]["Id"])
+            ''  # log.info("Attachment %s posted to Archer", data["RequestedObject"]["Id"])
             return data["RequestedObject"]["Id"]
 
         except Exception as e:
-            raise e #traceback.print_exc()  # log.error("Function post_attachment didn't work, %s; Response content: %s", e, response.content)
+            ''  # log.error("Function post_attachment didn't work, %s; Response content: %s", e, response.content)
 
+    def nome_sem_caminho_arquivo(self, nome):
+        prefixo = "C:\\Users\\Costa e Silva\\Documents\\SAP\\SAP GUI\\"
+        if nome.startswith(prefixo):
+            novo_nome = nome[len(prefixo):]
+            return novo_nome
+        else:
+            return nome
+        
     def update_content_record(self, updated_json, record_id):
         """LevelID is an application
-        :param updated_json: see function create_content_record()
-        :param record_id: internal archer ID
-        :returns record_id
-        """
+		:param updated_json: see function create_content_record()
+		:param record_id: internal archer ID
+		:returns record_id
+		"""
         return self.create_content_record(updated_json, record_id)
 
     def update_sub_record(self, updated_json, subform_name, record_id):
         """LevelID is an application
-        :param updated_json: see function create_content_record()
-        :param record_id: internal archer ID
-        :returns record_id
-        """
+		:param updated_json: see function create_content_record()
+		:param record_id: internal archer ID
+		:returns record_id
+		"""
         return self.create_sub_record(updated_json, subform_name, record_id)
 
     def get_record(self, record_id, fields=None):
         """
-        :param record_id: internal archer record id
-        :return: record object
-        """
+		:param record_id: internal archer record id
+		:return: record object
+		"""
         api_url = f"{self.api_url_base}core/content/fieldcontent/"
         cont_id = [str(record_id)]
-        body = json.dumps(
-            {
-                "FieldIds": self.all_application_fields_array
-                if not fields
-                else [self.get_field_id_by_name(f_name) for f_name in fields],
-                "ContentIds": cont_id,
-            }
-        )
+        if fields:
+            fields = [self.get_field_id_by_name(field) for field in fields]
+            body = json.dumps({"FieldIds": fields, "ContentIds": cont_id})
+        else:
+            body = json.dumps({"FieldIds": self.all_application_fields_array, "ContentIds": cont_id})
 
         post_header = dict(self.header)
         post_header["X-Http-Method-Override"] = "POST"
@@ -716,18 +715,18 @@ class ArcherInstance:
         try:
             response = requests.post(api_url, headers=post_header, data=body)
             data = json.loads(response.content.decode("utf-8"))
-            if data[0]["RequestedObject"]:
-                return Record(self, data[0]["RequestedObject"])
+
+            return Record(self, data[0]["RequestedObject"])
 
         except Exception as e:
-            raise e #traceback.print_exc()  # log.error("Function get_record() didn't work, %s", e)
+            ''  # log.error("Function get_record() didn't work, %s", e)
 
     def get_sub_record(self, sub_record_id, sub_record_name):
         """
-        :param sub_record_id:
-        :param sub_record_name:
-        :return: record object
-        """
+		:param sub_record_id:
+		:param sub_record_name:
+		:return: record object
+		"""
         api_url = f"{self.api_url_base}core/content/fieldcontent/"
         cont_id = [str(sub_record_id)]
         all_fields_arr = self.subforms_json_by_sf_name[sub_record_name]["AllFields"]
@@ -743,7 +742,7 @@ class ArcherInstance:
             return Record(self, data[0]["RequestedObject"])
 
         except Exception as e:
-            raise e #traceback.print_exc()  # log.error("Function get_sub_record() didn't work, %s", e)
+            ''  # log.error("Function get_sub_record() didn't work, %s", e)
 
     def get_formula(self, field_id):
         api_url = f"{self.api_url_base}V2/internal/ManageFields({field_id})"
@@ -753,7 +752,7 @@ class ArcherInstance:
             return data["CalculationFormula"]
 
         except Exception as e:
-            raise e #traceback.print_exc()  # log.error("Function get_formula() didn't work, %s", e)
+            ''  # log.error("Function get_formula() didn't work, %s", e)
 
     def get_level_valueslist(self):
         url = f"{self.api_url_base}core/system/fielddefinition/level/{self.application_level_id}/valueslist?$select=Id,Guid,Name,RelatedValuesListId,MaximumSelection,MinimumSelection"
@@ -767,11 +766,11 @@ class ArcherInstance:
 
     def find_grc_endpoint_url(self, app_name):
         """
-        :param app_name: Try a name you see in the app
-        :return: You will get printout of all similar grc_api endpoints urls that
-                         might be slightly different from the app name, don't ask me why.
-                         For all grc_api calls use the name you get.
-        """
+		:param app_name: Try a name you see in the app
+		:return: You will get printout of all similar grc_api endpoints urls that
+				 might be slightly different from the app name, don't ask me why.
+				 For all grc_api calls use the name you get.
+		"""
 
         response = requests.get(self.content_api_url_base, headers=self.header)
         data = json.loads(response.content.decode("utf-8"))
@@ -786,11 +785,11 @@ class ArcherInstance:
 
     def get_grc_endpoint_records(self, endpoint_url, skip=None):
         """
-        By default gets 1000 records from the endpoint.
-        :param endpoint_url: get from find_grc_endpoint_url()
-        :param skip: number of records to skip in thousands (1,2,3)
-        :return: array of record jsons
-        """
+		By default gets 1000 records from the endpoint.
+		:param endpoint_url: get from find_grc_endpoint_url()
+		:param skip: number of records to skip in thousands (1,2,3)
+		:return: array of record jsons
+		"""
         if skip:
             api_url = self.content_api_url_base + endpoint_url + "?$skip=" + str(skip)
 
@@ -806,31 +805,25 @@ class ArcherInstance:
 
         return array_jsons
 
-    def build_unique_value_to_id_mapping(
-            self, endpoint_url, key_value_field=None, prefix=None
-    ):
+    def build_unique_value_to_id_mapping(self, endpoint_url, key_value_field=None, prefix=None):
         """
-        :param endpoint_url: get from find_grc_endpoint_url()
-        :param key_value_field: name of the field with unique value that you
-                                        identified in your application(e.g. "Incident #")
-        :param prefix: adding prefix in front of key_value_field, sometimes in Archer
-                                        tranp_key fields are shown like INC-xxx, but in app they only have xxx,
-                                        so to solve that add prefix here, in our case it's INC-
-        :return: Populate Archer_Instance object with self.key_field_value_to_system_id with {field_value:content_record_id}
-        """
+		:param endpoint_url: get from find_grc_endpoint_url()
+		:param key_value_field: name of the field with unique value that you
+						identified in your application(e.g. "Incident #")
+		:param prefix: adding prefix in front of key_value_field, sometimes in Archer
+		 				tranp_key fields are shown like INC-xxx, but in app they only have xxx,
+		 				so to solve that add prefix here, in our case it's INC-
+		:return: Populate Archer_Instance object with self.key_field_value_to_system_id with {field_value:content_record_id}
+		"""
 
         i = 0
-        for_equal_numbers = (
-            0  # breaks out of the loop if the number of records are equal to 1000
-        )
+        for_equal_numbers = 0  # breaks out of the loop if the number of records are equal to 1000
         all_records = []
 
         while True:
             current_records = self.get_grc_endpoint_records(endpoint_url, i)
             all_records += current_records
-            if (
-                    len(current_records) != 1000 or for_equal_numbers > 21
-            ):  # Attention, if records are more than 21000 increase the value
+            if len(current_records) != 1000 or for_equal_numbers > 21:  # Attention, if records are more than 21000 increase the value
                 break
 
             i += 1000
@@ -848,30 +841,28 @@ class ArcherInstance:
 
             else:
                 print(record)
-                print(
-                    'Please choose your key_field above: {"KEY_FIELD": "unique value"}'
-                )
+                print('Please choose your key_field above: {"KEY_FIELD": "unique value"}')
                 break
 
-        log.info("Updated the mapping between record id and KEY_FIELD")
+        ''  # log.info("Updated the mapping between record id and KEY_FIELD")
 
     def get_record_id_by_unique_value(self, key_value_field):
         """
-        :param key_value_field: field you used in build_unique_value_to_id_mapping()
-        :return: record id or False
-        """
+		:param key_value_field: field you used in build_unique_value_to_id_mapping()
+		:return: record id or False
+		"""
         try:
             return self.key_field_value_to_system_id[key_value_field]
-        except Exception as e:
+        except:
             return False
 
     def add_record_id_to_mapping(self, key_value_field, system_id, prefix=None):
         """
-        :param key_value_field: field you used in build_unique_value_to_id_mapping()
-        :param system_id: redord id
-        :param prefix:
-        :return: populate self.key_field_value_to_system_id
-        """
+		:param key_value_field: field you used in build_unique_value_to_id_mapping()
+		:param system_id: redord id
+		:param prefix:
+		:return: populate self.key_field_value_to_system_id
+		"""
         if prefix:
             field_value = prefix + str(key_value_field)
         else:

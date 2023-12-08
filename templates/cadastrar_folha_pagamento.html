@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',    filename='css/overlay.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <title>Folhas de Pagamento</title>
+</head>
+
+<body>
+  <header>
+    <img src="{{ url_for('static', filename='img/logo-branco.png') }}" alt="Logo">
+    <a href="{{ url_for('logout') }}" style="color: #e7c239; font-size: 18px; text-decoration: none;">Sair</a>
+  </header>
+  <div>
+    <form action="{{ url_for('cadastrar_folha_pagamento') }}" method="post" enctype="multipart/form-data">
+      <h2>Cadastrar Folhas de Pagamento</h2>
+      <div>
+        <label for="data">Mês de referência:</label>
+        <input type="date" id="mes_referencia" name="mes_referencia" required>
+
+      </div>
+      <div class="radio-group">
+        <div>
+          <label for="">Tipo:</label>
+          <br>
+        </div>
+        <input type="radio" id="contra_cheque" name="pagamento" value="contra_cheque" required>
+        <label for="contra_cheque">Contra Cheque</label>
+        <input type="radio" id="rpas" name="pagamento" value="rpas" required>
+        <label for="rpas">RPAS</label>
+      </div>
+      <label for="arquivo">Arquivo PDF:</label>
+      <input type="file" id="arquivo" name="arquivo" accept=".pdf" required>
+
+      <button type="submit" id="botao-enviar">Enviar</button>
+    </form>
+
+  </div>
+
+  <div class="overlay" id="overlay" style="display: none;">
+    <div class="overlay-content">
+      <div class="overlay-body">
+        <h2 style="color: #fff">CADASTRANDO FOLHAS DE PAGAMENTO...</h2>
+        <!-- <img src="{{ url_for('static', filename='img/amalie-steiness_50.gif') }}" alt="Simbolo de carregando"> -->
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var botaoEnviar = document.getElementById('botao-enviar');
+      if (botaoEnviar) {
+        botaoEnviar.addEventListener('click', function () {
+          document.getElementById('overlay').style.display = 'block';
+
+        });
+      }
+    });
+  </script>
+
+</body>
+
+</html>

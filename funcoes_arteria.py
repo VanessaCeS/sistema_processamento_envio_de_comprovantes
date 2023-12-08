@@ -15,6 +15,7 @@ from zeep import Client, Settings, Transport
 from concurrent.futures import ThreadPoolExecutor
 from rsa_archer.archer_instance import ArcherInstance
 
+# load_dotenv('.env')
 
 def adjust_date_and_time_to_arteria(date_audiencia, formato="%d/%m/%Y %H:%M"):
     given_date = datetime.datetime.strptime(date_audiencia, formato)
@@ -28,18 +29,22 @@ def adjust_date_to_arteria(date_audiencia, formato="%d/%m/%Y"):
 
 
 def instancia_arteria(application="", user=None, password=None):
+    user = os.getenv('USER_Dev')
+    password = os.getenv('PASSWORD_Dev')
     if 'archer_instance' not in globals():
-        load_dotenv('./.env')
-        AMBIENTE = 'PROD_ARTERIA'#os.getenv('AMBIENTE')
-        user = user if user else os.getenv(f'USER_{AMBIENTE}')
-        password = password if password else os.getenv(f'PASSWORD_{AMBIENTE}')
+        load_dotenv()
+
+        AMBIENTE = 'Dev'
+        user = user if user else ''
+        password = password if password else ''
         global archer_instance
-        archer_instance = ArcherInstance(os.getenv(f'URL_{AMBIENTE}'),
-                                         os.getenv(f'AMBIENTE_{AMBIENTE}'),
-                                         user,
-                                         password,
-                                         token=""
-                                         )
+        archer_instance = ArcherInstance('https://att.costaesilvaadv.com.br',
+                                            'Dev',
+                                            user,
+                                            password,
+                                            
+                                            )
+
     if application:
         archer_instance.from_application(application)
     return archer_instance
@@ -82,6 +87,7 @@ def cadastrar_arteria(dados_precadastro, app, id_arteria=None, archer_instance=N
         return archer_instance.update_content_record(dados_precadastro, id_arteria)
     else:
         return archer_instance.create_content_record(dados_precadastro)
+
 
 def teste333(dados, app, archer_instance=None):
     if not archer_instance:
@@ -127,6 +133,7 @@ def cadastrar_e_vincular_subf(dados, app, subf_field_name, record_id):
     if record_exists:
         created = archer_instance.create_sub_record(dados, subf_field_name)
         if created:
+            print(created)
             record = archer_instance.get_record(record_id)
             current_sub_records_ids = record.get_field_content(subf_field_name)
             if current_sub_records_ids:
@@ -999,6 +1006,7 @@ def search(search_xml, page=1, quantidade=False):
     # wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
     wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
 
+
     # Para Debug
     # settings = Settings(strict=False, xml_huge_tree=True)
     session = Session()
@@ -1010,7 +1018,7 @@ def search(search_xml, page=1, quantidade=False):
 
     inicio = time()
 
-    search = client.service.ExecuteSearch(sessionToken="FF4AE39F830BBEE8AB15F2964E411794", searchOptions=search_xml,
+    search = client.service.ExecuteSearch(sessionToken=f"{util.get_token()}", searchOptions=search_xml,
                                           pageNumber=page)
 
     fim = time()
@@ -1062,7 +1070,9 @@ def get_level_names():
     s = Session()
     s.headers.update({'Content-Type': 'application/json'})
     s.cookies.update({'__ArcherSessionCookie__': util.get_token()})
-    r = s.get('https://arteria.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
+    # r = s.get('https://arteria.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
+    r = s.get('https://att.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
+
     return {level['RequestedObject']['Id']: level['RequestedObject']['Name'] for level in r.json()}
 
 
@@ -1155,7 +1165,6 @@ def enviar_comprovante_arteria(id_sistema_pagamento, solicitante_id,  id_proceso
         if ramo != '66 - HABITACIONAL':
             avanca_etapa_wf(id_sistema_pagamento,"Próxima Etapa",'Recibo')
 
-
 def pegar_arquivo(nome,diretorio):
     prefixo = nome
     arquivos = os.listdir(diretorio)
@@ -1170,3 +1179,14 @@ def transformar_arquivo_para_base64( nome_arquivo):
             dados = arquivo.read()
             dados_base64 = base64.b64encode(dados)
             return dados_base64.decode("utf-8") 
+
+def enviar_folha_pagamento_arteria(arquivo_pdf, mes, id_sistema, data):
+    arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
+    id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
+    data_sub = {'Mês de Referência': mes, 'Recibos': [f'{id}']}
+    cadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Recibo', id_sistema)
+    dado_update = {'Atualização Recibo': data}
+    cadastrar_arteria(dado_update , 'Ficha Cadastral', id_sistema)
+
+
+instancia_arteria('Ficha Cadastral')

@@ -1,9 +1,11 @@
 import os
 import bcrypt
 import pymssql
-from extrair import principal
 from flask_bcrypt import Bcrypt
-from flask import Flask, redirect, render_template, request, session
+from werkzeug.utils import secure_filename
+from rotina_rpas import dividir_e_renomear_pdf_rpas
+from rotina_contra_cheque import dividir_e_renomear_pdf_contra_cheque
+from flask import Flask, flash, redirect, render_template, request, session
 
 
 padrao_email =  r"^[a-zA-Z0-9._%+-]+@costaesilvaadv\.com\.br$"
@@ -21,6 +23,8 @@ app = Flask(__name__)
 bcryptObj = Bcrypt(app)
 
 app.secret_key = secret_key 
+UPLOAD_FOLDER = 'pdfs'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def conectar():
     return pymssql.connect(host=server, user=user, password=password, database=database)
@@ -54,37 +58,48 @@ def login():
                 session['user_id'] = usuario[0]
                 session['email'] = usuario[2]
                 nome = usuario[1]
-                return render_template("home.html", nome=nome)
+                return render_template("cadastrar_folha_pagamento.html", nome=nome)
             else:
                 mensagem = 'Usuário ou senha inválidos. Tente novamente.'
-                return render_template("index.html", mensagem=mensagem, color=color_danger)
+                return render_template("login.html", mensagem=mensagem, color=color_danger)
         else: 
             mensagem = "Usuário não cadastrado. Para mais informações consulte o suporte."
-            return render_template("index.html", mensagem=mensagem, color=color_danger)
+            return render_template("login.html", mensagem=mensagem, color=color_danger)
 
-    return render_template("index.html")
+    return render_template("login.html")
 
-@app.route("/home", methods=['POST', 'GET'])
-def home():
-    return render_template('home.html')
-
-@app.route('/planilha', methods=['POST', 'GET'])
-def subir_planilha_adm_sap():
+@app.route('/folha-pagamento', methods=['POST', 'GET'])
+def cadastrar_folha_pagamento():
     if 'user_id' not in session:
             mensagem = 'Usuário não tem permissão para acessar essa página. Faça o login e tente novamente.'
-            return render_template("index.html", mensagem=mensagem, color=color_danger)
+            return render_template("login.html", mensagem=mensagem, color=color_danger)
     if request.method == 'POST':
-        arquivo = request.form['file']
-        data_arquivo = request.form['dt_previsao_credito']
-        tipo = request.form['tipo_documento']
-        principal(arquivo, data_arquivo, tipo)
-    return render_template('enviar_arquivo.html')
+        if 'arquivo' not in request.files:
+            flash('Nenhum arquivo enviado')
+            return redirect(request.url)
+        arquivo = request.files['arquivo']
+        if arquivo and allowed_file(arquivo.filename):
+            filename = secure_filename(arquivo.filename)
+            arquivo_salvo = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            arquivo.save(arquivo_salvo)
+        tipo = request.form['pagamento']
+        mes_referencia = request.form['mes_referencia']
+        if tipo == 'contra_cheque':
+            dividir_e_renomear_pdf_contra_cheque(arquivo_salvo, mes_referencia)
+        elif tipo == 'rpas':
+            dividir_e_renomear_pdf_rpas(arquivo_salvo, mes_referencia)
+        flash('Dados enviados e serão processados.')
+        return redirect('/folha-pagamento')  
+
+    return render_template('cadastrar_folha_pagamento.html')
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf'} 
 
 @app.route("/logout")
 def logout():
     session.pop("user_id", None)
     return redirect("/")
-
 
 if __name__ == "__main__":
     app.run()

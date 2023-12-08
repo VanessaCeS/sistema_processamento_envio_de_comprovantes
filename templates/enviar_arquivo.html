@@ -14,35 +14,43 @@
 </head>
 
 <body>
-  <div>
+  <div class="container">
     <iframe src="cabecalho.html" width="100%" frameborder="0"></iframe>
     <!-- {% include 'cabecalho.html' %} -->
   </div>
-
-  <div style="height: 400px;" class="formulario">
-    <h1 class="title" style="text-align: center;">Enviar Documentos</h1>
+  <div class="formulario">
+    <h1 class="title">Enviar Documentos</h1>
     <form method="post">
       <div class="box">
-        <form method="post">
-          <div class="field">
-            <div class="control">
-              <label for="">Data</label>
-              <br>
-              <input class="input" type="date" name="date" id='date' autofocus="" required>
-            </div>
+        <div class="field">
+          <div class="control">
+            <label for="date">Data</label>
+            <br>
+            <input class="input" type="date" name="date" id='date' autofocus="" required>
           </div>
-          <div class="field">
-            <div class="control">
-              <label for="">Arquivo PDF</label>
-              <br>
-              <input type="file" name="file_pdf" id='file_pdf' placeholder="Digite uma senha forte" required>
-            </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <label for="file_pdf">Contra Cheque</label>
+            <input type="radio" name="file_pdf" id='contra_cheque' required>
           </div>
-          <button type="submit">Enviar</button>
-        </form>
+          <div class="control">
+            <label for="file_pdf">RPAS</label>
+            <input type="radio" name="file_pdf" id='rpas' required>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <label for="file_pdf">Arquivo PDF</label>
+            <br>
+            <input type="file" name="file_pdf" id='file_pdf' placeholder="Digite uma senha forte" required>
+          </div>
+        </div>
+        <button type="submit">Enviar</button>
       </div>
     </form>
   </div>
+
 
   {% if mensagem %}
   <script>
