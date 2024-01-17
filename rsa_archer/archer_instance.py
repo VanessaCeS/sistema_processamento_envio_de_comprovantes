@@ -76,7 +76,7 @@ class ArcherInstance:
                     "InstanceName": self.instance_name,
                     "Username": self.username,
                     "UserDomain": "",
-                    "Password": self.password,
+                    "Password": self.password
                 },
             )
 

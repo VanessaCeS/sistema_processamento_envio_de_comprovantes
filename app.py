@@ -13,10 +13,10 @@ color_danger = "#ff0000"
 color_success = "#008800"
 
 secret_key = os.getenv('secret_key')
-database = os.getenv('db_databese_dev')
-user = os.getenv('db_username_dev')
-password = os.getenv('db_password_dev')
-server = os.getenv('db_server_dev')
+database = os.getenv('database')
+user = os.getenv('db_username')
+password = os.getenv('db_password')
+server = os.getenv('db_server')
 
 app = Flask(__name__)
 
@@ -70,9 +70,9 @@ def login():
 
 @app.route('/folha-pagamento', methods=['POST', 'GET'])
 def cadastrar_folha_pagamento():
-    if 'user_id' not in session:
-            mensagem = 'Usuário não tem permissão para acessar essa página. Faça o login e tente novamente.'
-            return render_template("login.html", mensagem=mensagem, color=color_danger)
+    # if 'user_id' not in session:
+    #         mensagem = 'Usuário não tem permissão para acessar essa página. Faça o login e tente novamente.'
+    #         return render_template("login.html", mensagem=mensagem, color=color_danger)
     if request.method == 'POST':
         if 'arquivo' not in request.files:
             flash('Nenhum arquivo enviado')

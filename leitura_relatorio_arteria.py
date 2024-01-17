@@ -1,3 +1,4 @@
+from auxiliares import remover_acentos
 from funcoes_arteria import search
 
 search_xml = """<SearchReport id="17093" name="rel_ficha_cadastral">
@@ -7,7 +8,7 @@ search_xml = """<SearchReport id="17093" name="rel_ficha_cadastral">
     <DisplayField>17960</DisplayField>
     <DisplayField>22104</DisplayField>
   </DisplayFields>
-  <PageSize>150</PageSize>
+  <PageSize>15000</PageSize>
   <IsResultLimitPercent>False</IsResultLimitPercent>
   <Criteria>
     <Keywords />
@@ -41,7 +42,6 @@ search_xml = """<SearchReport id="17093" name="rel_ficha_cadastral">
 """
 
 def get_dados_ficha_cadastral(search_xml):
-    dados = search(search_xml, page=1, quantidade=False)
+    dados = search(search_xml)
     return dados
 
-get_dados_ficha_cadastral(search_xml)

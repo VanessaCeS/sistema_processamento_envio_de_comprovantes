@@ -1,5 +1,9 @@
 import os
 from datetime import datetime
+from unidecode import unidecode
+
+def remover_acentos(texto):
+    return unidecode(texto).replace('  ', ' ')
 
 def encontrar_indice_linha(linhas, texto):
   for indice, linha in enumerate(linhas):
@@ -41,8 +45,8 @@ def data_corrente_formatada():
     return data_formatada
 
 def deletar_arquivos_pdf():
-    diretorio_pdf = 'sistema_processamento_envio_de_comprovantes'
-    diretorio_txt = 'sistema_processamento_envio_de_comprovantes' + '/arquivos_txt'
+    diretorio_pdf = 'C:\\Users\\Costa e Silva\\Documents\\sistema_processamento_envio_de_comprovantes'
+    diretorio_txt = 'C:\\Users\\Costa e Silva\\Documents\\sistema_processamento_envio_de_comprovantes' + '/arquivos_txt'
     diretorios = [diretorio_pdf, diretorio_txt]
     for diretorio in diretorios:
       arquivos = os.listdir(diretorio)
@@ -50,3 +54,4 @@ def deletar_arquivos_pdf():
           if arquivo.endswith((".pdf", ".txt")):
               caminho_arquivo = os.path.join(diretorio, arquivo)
               os.remove(caminho_arquivo)
+

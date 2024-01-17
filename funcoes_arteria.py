@@ -15,7 +15,9 @@ from zeep import Client, Settings, Transport
 from concurrent.futures import ThreadPoolExecutor
 from rsa_archer.archer_instance import ArcherInstance
 
-# load_dotenv('.env')
+
+
+load_dotenv('.env')
 
 def adjust_date_and_time_to_arteria(date_audiencia, formato="%d/%m/%Y %H:%M"):
     given_date = datetime.datetime.strptime(date_audiencia, formato)
@@ -29,26 +31,16 @@ def adjust_date_to_arteria(date_audiencia, formato="%d/%m/%Y"):
 
 
 def instancia_arteria(application="", user=None, password=None):
-    user = os.getenv('USER_Dev')
-    password = os.getenv('PASSWORD_Dev')
     if 'archer_instance' not in globals():
-        load_dotenv()
-
-        AMBIENTE = 'Dev'
-        user = user if user else ''
-        password = password if password else ''
+        load_dotenv('.env')
+        AMBIENTE = 'PROD_ARTERIA'#os.getenv('AMBIENTE')
+        user = user if user else os.getenv(f'USER_{AMBIENTE}')
+        password = password if password else os.getenv(f'PASSWORD_{AMBIENTE}')
         global archer_instance
-        archer_instance = ArcherInstance('https://att.costaesilvaadv.com.br',
-                                            'Dev',
-                                            user,
-                                            password,
-                                            
-                                            )
-
+        archer_instance = ArcherInstance("https://arteria.costaesilvaadv.com.br", "Produção", 'luanna.moreira', "Fifi220820-+")
     if application:
         archer_instance.from_application(application)
     return archer_instance
-
 
 def busca_todos_campos_app(app):
     campos = instancia_arteria(app).application_fields_json
@@ -727,8 +719,8 @@ def extract_user(user):
 
 
 def search_(search, page=1):
-    # wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
-    wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
+    wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
+    # wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
 
 
     settings = Settings(strict=False, xml_huge_tree=True)
@@ -863,8 +855,8 @@ def search_(search, page=1):
 
 
 def bbb_search(search, page=1):
-    # wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
-    wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
+    wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
+    # wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
 
     # Para Debug
     # settings = Settings(strict=False, xml_huge_tree=True)
@@ -1003,8 +995,8 @@ def bbb_search(search, page=1):
 
 
 def search(search_xml, page=1, quantidade=False):
-    # wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
-    wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
+    wsdl = 'https://arteria.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
+    # wsdl = 'https://att.costaesilvaadv.com.br/RSAarcher/ws/search.asmx?wsdl'
 
 
     # Para Debug
@@ -1070,8 +1062,8 @@ def get_level_names():
     s = Session()
     s.headers.update({'Content-Type': 'application/json'})
     s.cookies.update({'__ArcherSessionCookie__': util.get_token()})
-    # r = s.get('https://arteria.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
-    r = s.get('https://att.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
+    r = s.get('https://arteria.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
+    # r = s.get('https://att.costaesilvaadv.com.br/RSAarcher/api/core/system/level')
 
     return {level['RequestedObject']['Id']: level['RequestedObject']['Name'] for level in r.json()}
 
