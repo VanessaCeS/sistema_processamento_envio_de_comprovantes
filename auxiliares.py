@@ -16,18 +16,18 @@ def converter_string_mes(string):
     nome_mes = dividir_string[1]
     ano = dividir_string[0]
     dict_meses = {
-    '01': 'Janeiro',
-    '02': 'Fevereiro',
-    '03': 'Março',
-    '4': 'Abril',
-    '05': 'Maio',
-    '06': 'Junho',
-    '07': 'Julho',
-    '08': 'Agosto',
-    '09': 'Setembro',
-    '10': 'Outubro',
-    '11': 'Novembro',
-    '12': 'Dezembro'
+    '01': 'JANEIRO',
+    '02': 'FEVEREIRO',
+    '03': 'MARÇO',
+    '4': 'ABRIL',
+    '05': 'MAIO',
+    '06': 'JUNHO',
+    '07': 'JULHO',
+    '08': 'AGOSTO',
+    '09': 'SETEMBRO',
+    '10': 'OUTUBRO',
+    '11': 'NOVERMBRO',
+    '12': 'DEZEMBRO'
 }
     for m in dict.keys(dict_meses):
       if m in nome_mes:
@@ -45,9 +45,11 @@ def data_corrente_formatada():
     return data_formatada
 
 def deletar_arquivos_pdf():
-    diretorio_pdf = 'C:\\Users\\Costa e Silva\\Documents\\sistema_processamento_envio_de_comprovantes'
-    diretorio_txt = 'C:\\Users\\Costa e Silva\\Documents\\sistema_processamento_envio_de_comprovantes' + '/arquivos_txt'
-    diretorios = [diretorio_pdf, diretorio_txt]
+    diretorio_pdf = os.getenv("diretorio_comprovantes")
+    diretorio_txt = os.getenv("diretorio_comprovantes") + '/arquivos_txt'
+    diretorio_pdfs = os.getenv("diretorio_comprovantes") + '/pdfs'
+    
+    diretorios = [diretorio_pdf, diretorio_txt, diretorio_pdfs]
     for diretorio in diretorios:
       arquivos = os.listdir(diretorio)
       for arquivo in arquivos:

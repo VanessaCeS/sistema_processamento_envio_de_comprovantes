@@ -37,7 +37,10 @@ form label {
 }
 
 form input[type="date"],
-form input[type="file"] {
+form input[type="file"],
+form input[type="text"],
+form input[type="email"],
+form input[type="password"] {
   width: calc(50% - 5px);
   padding: 10px;
   margin-bottom: 20px;
@@ -45,7 +48,6 @@ form input[type="file"] {
   border-radius: 5px;
   display: inline-block;
 }
-
 
 .radio-group {
   margin-bottom: 20px;

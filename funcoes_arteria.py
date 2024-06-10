@@ -37,9 +37,10 @@ def instancia_arteria(application="", user=None, password=None):
         user = user if user else os.getenv(f'USER_{AMBIENTE}')
         password = password if password else os.getenv(f'PASSWORD_{AMBIENTE}')
         global archer_instance
-        archer_instance = ArcherInstance("https://arteria.costaesilvaadv.com.br", "Produção", 'luanna.moreira', "Fifi220820-+")
+        archer_instance = ArcherInstance("https://arteria.costaesilvaadv.com.br", "Produção", user, password)
     if application:
         archer_instance.from_application(application)
+    archer_instance.application_level_id = 261
     return archer_instance
 
 def busca_todos_campos_app(app):
@@ -113,6 +114,9 @@ def get_record(id_arteria, fields=None):
     #         field['Value']['ValuesListIds'] = [{x: field_options_inversed[x]} for x in field['Value']['ValuesListIds']]
     return record_data
 
+def get_sub_record(id_arteria, sub_record_name):
+    record_data = archer_instance.get_sub_record(id_arteria, sub_record_name)
+    return record_data
 
 def get_field_options(app, campo):
     archer_instance = instancia_arteria(app)
@@ -1166,19 +1170,18 @@ def pegar_arquivo(nome,diretorio):
         print("Arquivo mais novo:", arquivo_mais_novo)
         return arquivo_mais_novo
         
-def transformar_arquivo_para_base64( nome_arquivo):
+def transformar_arquivo_para_base64(nome_arquivo):
         with open(nome_arquivo, "rb") as arquivo:
             dados = arquivo.read()
             dados_base64 = base64.b64encode(dados)
             return dados_base64.decode("utf-8") 
 
 def enviar_folha_pagamento_arteria(arquivo_pdf, mes, id_sistema, data):
+    instancia_arteria('Ficha Cadastral')
     arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
     id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
-    data_sub = {'Mês de Referência': mes, 'Recibos': [f'{id}']}
-    cadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Recibo', id_sistema)
+    data_sub = {'Mês de Referência': [mes], 'Contracheque \ RPA': [f'{id}']}
+    cadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Contracheque e RPA', id_sistema)
     dado_update = {'Atualização Recibo': data}
     cadastrar_arteria(dado_update , 'Ficha Cadastral', id_sistema)
 
-
-instancia_arteria('Ficha Cadastral')

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro Usuario</title>
+  <link rel="stylesheet" href="{{ url_for('static',    filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link rel="icon" href="../static/img/icon-removebg-preview-1500.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body>
+  <div>
+    <header>
+      <img src="{{ url_for('static', filename='img/logo-branco.png') }}" alt="Logo">
+      <a href="{{ url_for('logout') }}" style="color: #e7c239; font-size: 18px; text-decoration: none;">Sair</a>
+    </header>
+
+  </div>
+
+  <div style="height: 400px;" class="formulario">
+    <h1 class="title" style="text-align: center;">Cadastro</h1>
+    <form method="post">
+      <div class="box">
+        <form method="post">
+          <div class="field">
+            <div class="control">
+              <label for="">Nome: </label>
+              <input class="input" type="text" name="nome" id='nome' placeholder="Digite seu nome" autofocus="" required>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <label for="">Email: </label>
+              <input class="input" type="email" name="email" id='email' placeholder="Digite seu email" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="control">
+              <label for="">Senha: </label>
+              <input type="password" name="senha" id='senha' placeholder="Digite uma senha forte" required>
+            </div>
+          </div>
+          <button type="submit" style="margin-top: 15px; width: 70%;">Criar</button>
+        </form>
+      </div>
+    </form>
+  </div>
+
+  {% if mensagem %}
+  <script>
+    Toastify({
+      text: "{{ mensagem }}",
+      duration: 5000,
+      destination: '/',
+      newWindow: true,
+      close: true,
+      gravity: "top",
+      position: "right",
+      backgroundColor: "{{color}}",
+      stopOnFocus: true,
+    }).showToast();
+  </script>
+  {% endif %}
+</body>
+
+</html>

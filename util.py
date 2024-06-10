@@ -66,7 +66,6 @@ def sql_integra_exec(sql, val):
 
 
 def get_token(user='integra.api'):
-    return '0F7CFC56B9FCB97905E605238496EA1C'
     sql = "SELECT token FROM archer_token WHERE users = '%s'" % user
     result = sql_integra_get(sql)
     return result[0]['token']

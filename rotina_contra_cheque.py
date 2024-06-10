@@ -6,7 +6,6 @@ from auxiliares import converter_string_mes, data_corrente_formatada, deletar_ar
 dados = get_dados_ficha_cadastral(search_xml)
 
 def dividir_e_renomear_pdf_contra_cheque(caminho_pdf, mes_referencia):
-
     with open(caminho_pdf, 'rb') as arquivo_pdf:
         leitor_pdf = PdfReader(arquivo_pdf)
         for page_num in range(len(leitor_pdf.pages)):
