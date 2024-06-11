@@ -1,2 +1,6 @@
 .env 
 pdfs
+__pycache__
+.vscode
+tests
+rsa_archer
