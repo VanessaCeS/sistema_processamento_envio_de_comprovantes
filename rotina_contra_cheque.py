@@ -19,13 +19,14 @@ def dividir_e_renomear_pdf_contra_cheque(caminho_pdf, mes_referencia):
             mes_arteria = converter_string_mes(mes_referencia)
             
             novo_nome = f"{nome} - {mes_arteria.replace('/', ' ')}.pdf"
+            print(novo_nome)
             with open(novo_nome, 'wb') as novo_arquivo:
                 escritor_pdf.write(novo_arquivo)
             for dado in dados:
                 if remover_acentos(dado['Nome']) == nome and dado['CPF \\ CNPJ'].replace('.','').replace('-','').strip() == documento:
                     data_upload = data_corrente_formatada()
                     data_upload = adjust_date_to_arteria(data_upload)
-                    enviar_folha_pagamento_arteria(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], data_upload)
+                    # enviar_folha_pagamento_arteria(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], data_upload)
     deletar_arquivos_pdf()        
 
 def ler_extrair_dados_txt(arquivo_txt):
