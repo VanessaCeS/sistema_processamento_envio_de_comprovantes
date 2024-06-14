@@ -1,14 +1,15 @@
 from auxiliares import remover_acentos
 from funcoes_arteria import search
 
-search_xml = """<SearchReport id="17093" name="rel_ficha_cadastral">
+search_xml = """<SearchReport id="18204" name="Ficha Cadastral - Robo">
   <DisplayFields>
     <DisplayField>17963</DisplayField>
     <DisplayField>17976</DisplayField>
     <DisplayField>17960</DisplayField>
     <DisplayField>22104</DisplayField>
+    <DisplayField>27311</DisplayField>
   </DisplayFields>
-  <PageSize>15000</PageSize>
+  <PageSize>50000</PageSize>
   <IsResultLimitPercent>False</IsResultLimitPercent>
   <Criteria>
     <Keywords />
@@ -22,6 +23,16 @@ search_xml = """<SearchReport id="17093" name="rel_ficha_cadastral">
           <IncludeChildren>False</IncludeChildren>
           <Values>
             <Value>71001</Value>
+          </Values>
+        </ValueListFilterCondition>
+        <ValueListFilterCondition>
+          <Field>17983</Field>
+          <Operator>DoesNotContain</Operator>
+          <IsNoSelectionIncluded>False</IsNoSelectionIncluded>
+          <IncludeChildren>False</IncludeChildren>
+          <Values>
+            <Value>131142</Value>
+            <Value>71007</Value>
           </Values>
         </ValueListFilterCondition>
       </Conditions>
