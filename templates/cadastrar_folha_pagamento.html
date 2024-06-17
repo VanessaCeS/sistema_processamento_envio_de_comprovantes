@@ -9,7 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;500&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-infinitescroll/3.0.6/jquery.infinitescroll.min.js"></script>
   <title>Folhas de Pagamento</title>
 </head>
 
@@ -24,7 +27,6 @@
       <div>
         <label for="data">Mês de referência:</label>
         <input type="date" id="mes_referencia" name="mes_referencia" required>
-
       </div>
       <div class="radio-group">
         <div>
@@ -35,11 +37,13 @@
         <label for="contra_cheque">Contra Cheque</label>
         <input type="radio" id="rpas" name="pagamento" value="rpas" required>
         <label for="rpas">RPAS</label>
+        <input type="radio" id="comprovante" name="pagamento" value="comprovante" required>
+        <label for="comprovante">Comprovantes</label>
       </div>
       <label for="arquivo">Arquivo PDF:</label>
-      <input type="file" id="arquivo" name="arquivo" accept=".pdf" required>
+      <input type="file" id="arquivo" name="arquivo[]" accept=".pdf" multiple="multiple" required>
 
-      <button type="submit" id="botao-enviar">Enviar</button>
+      <button type="submit" id="botao-enviar" onclick="verificarSelecao()">Enviar</button>
     </form>
 
   </div>
@@ -48,22 +52,64 @@
     <div class="overlay-content">
       <div class="overlay-body">
         <h2 style="color: #fff">CADASTRANDO FOLHAS DE PAGAMENTO...</h2>
-        <!-- <img src="{{ url_for('static', filename='img/amalie-steiness_50.gif') }}" alt="Simbolo de carregando"> -->
       </div>
     </div>
   </div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var botaoEnviar = document.getElementById('botao-enviar');
-      if (botaoEnviar) {
-        botaoEnviar.addEventListener('click', function () {
-          document.getElementById('overlay').style.display = 'block';
-
-        });
+    function verificarSelecao() {
+      var tipoSelecionado = document.querySelector("input[name='pagamento']:checked");
+      var arquivoSelecionado = document.getElementById("arquivo").files
+      var mesSelecionado = document.getElementById("mes_referencia").value
+      var botaoEnviar = document.getElementById('botao-enviar')
+      console.log(botaoEnviar)
+      if (tipoSelecionado && mesSelecionado && arquivoSelecionado.length > 0) {
+        document.getElementById('overlay').style.display = 'block';
       }
-    });
-  </script>
+      else if (!tipoSelecionado && !mesSelecionado) {
 
+        Toastify({
+          text: "Todas as informações devem ser preenchidas!",
+          position: "right",
+          autoClose: true,
+          duration: 15000,
+          close: true,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          backgroundColor: "#ff0000",
+        }).showToast();
+      }
+    }
+    var radioButtons = document.querySelectorAll('input[name="pagamento"]');
+    radioButtons.forEach(function (radioButton) {
+      radioButton.addEventListener('change', verificarSelecao);
+    });
+
+    document.getElementById('mes_referencia').addEventListener('change', verificarSelecao);
+    document.getElementById('arquivo').addEventListener('change', verificarSelecao);
+
+  </script>
+  </script>
+  {% if mensagem %}
+  <script>
+    Toastify({
+      text: "{{ mensagem }}",
+      position: "right",
+      autoClose: 50000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "light",
+      backgroundColor: "{{color}}",
+    }).showToast();
+  </script>
+  {% endif %}
 </body>
 
 </html>
