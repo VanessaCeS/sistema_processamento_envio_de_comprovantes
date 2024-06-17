@@ -3,6 +3,7 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  color: #1E1014
 }
 
 header {
@@ -11,7 +12,7 @@ header {
   align-items: center;
   padding: 10px;
   min-height: 40px;
-  background-color: #333;
+  background-color: #263238;
   color: #fff;
 }
 
@@ -23,7 +24,7 @@ form {
   max-width: 600px;
   margin: 50px auto;
   padding: 20px;
-  border: 2px solid #ddd;
+  border: 2px solid #C9E4E7;
   border-radius: 8px;
 }
 
@@ -44,7 +45,7 @@ form input[type="password"] {
   width: calc(50% - 5px);
   padding: 10px;
   margin-bottom: 20px;
-  border: 2px solid #ddd;
+  border: 2px solid #C9E4E7;
   border-radius: 5px;
   display: inline-block;
 }
@@ -59,7 +60,7 @@ form input[type="password"] {
 }
 
 form button {
-  background-color: #333;
+  background-color: #011627;
   color: #fff;
   padding: 10px;
   border: none;
@@ -67,9 +68,10 @@ form button {
   cursor: pointer;
   display: block;
   margin: 20px auto;
+  width: 150px;
 }
 form button:hover {
-  background-color: #2a2a69
+  background-color: #004E98
 }
 
 /* O restante do seu CSS permanece inalterado */
