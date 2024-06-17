@@ -2,8 +2,10 @@ import os
 import re
 import bcrypt
 import pymssql
+from rich import print
 from flask_bcrypt import Bcrypt
 from werkzeug.utils import secure_filename
+from rotina_comprovante import dividir_e_renomear_pdf_comprovante
 from rotina_rpas import dividir_e_renomear_pdf_rpas
 from rotina_contra_cheque import dividir_e_renomear_pdf_contra_cheque
 from flask import Flask, flash, redirect, render_template, request, session
@@ -73,24 +75,39 @@ def cadastrar_folha_pagamento():
     if 'user_id' not in session:
             mensagem = 'Usuário não tem permissão para acessar essa página. Faça o login e tente novamente.'
             return render_template("login.html", mensagem=mensagem, color=color_danger)
-    if request.method == 'POST':
-        if 'arquivo' not in request.files:
-            flash('Nenhum arquivo enviado')
-            return redirect(request.url)
-        arquivo = request.files['arquivo']
-        if arquivo and allowed_file(arquivo.filename):
-            filename = secure_filename(arquivo.filename)
-            arquivo_salvo = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            arquivo.save(arquivo_salvo)
-        tipo = request.form['pagamento']
-        mes_referencia = request.form['mes_referencia']
-        if tipo == 'contra_cheque':
-            dividir_e_renomear_pdf_contra_cheque(arquivo_salvo, mes_referencia)
-        elif tipo == 'rpas':
-            dividir_e_renomear_pdf_rpas(arquivo_salvo, mes_referencia)
-        flash('Dados enviados e serão processados.')
-        return redirect('/folha-pagamento')  
+    try:
+        if request.method == 'POST':
+            if 'arquivo[]' not in request.files:
+                flash('Nenhum arquivo enviado')
+                return redirect(request.url)
+            
+            arquivos = request.files.getlist('arquivo[]')
+            caminho_arquivo = []
+            for arquivo in arquivos:
+                print(arquivos)
+                if arquivo.filename == '':
+                    flash('Nenhum arquivo selecionado para upload')
+                    return redirect(request.url)
+                if arquivo and allowed_file(arquivo.filename):
+                    filename = secure_filename(arquivo.filename)
 
+                    arquivo_salvo = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    caminho_arquivo.append(arquivo_salvo)
+                    arquivo.save(arquivo_salvo)
+
+            tipo = request.form['pagamento']
+            mes_referencia = request.form['mes_referencia']
+            if tipo == 'contra_cheque':
+                dividir_e_renomear_pdf_contra_cheque(arquivo_salvo, mes_referencia)
+            elif tipo == 'rpas':
+                dividir_e_renomear_pdf_rpas(arquivo_salvo, mes_referencia)
+            elif tipo == 'comprovante':
+                dividir_e_renomear_pdf_comprovante(caminho_arquivo, mes_referencia)
+            flash('Dados enviados e serão processados.')
+            return redirect('/folha-pagamento')  
+    except:
+        mensagem = "Um erro aconteceu, entre em contato com a TI."
+        return render_template('cadastrar_folha_pagamento.html',  mensagem=mensagem, color=color_danger)
     return render_template('cadastrar_folha_pagamento.html')
 
 def allowed_file(filename):
