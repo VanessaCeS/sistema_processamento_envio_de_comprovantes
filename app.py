@@ -72,9 +72,9 @@ def login():
 
 @app.route('/folha-pagamento', methods=['POST', 'GET'])
 def cadastrar_folha_pagamento():
-    if 'user_id' not in session:
-            mensagem = 'Usuário não tem permissão para acessar essa página. Faça o login e tente novamente.'
-            return render_template("login.html", mensagem=mensagem, color=color_danger)
+    # if 'user_id' not in session:
+    #         mensagem = 'Usuário não tem permissão para acessar essa página. Faça o login e tente novamente.'
+    #         return render_template("login.html", mensagem=mensagem, color=color_danger)
     try:
         if request.method == 'POST':
             if 'arquivo[]' not in request.files:
