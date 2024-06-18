@@ -8,7 +8,7 @@ import datetime
 import requests
 import xmltodict
 from rich import print
-from time import sleep, time
+from time import  time
 from requests import Session
 from dotenv import load_dotenv
 import xml.etree.ElementTree as ET
@@ -1180,9 +1180,6 @@ def transformar_arquivo_para_base64(nome_arquivo):
 def enviar_folha_pagamento_arteria(arquivo_pdf, mes, id_sistema, data):
     instancia_arteria('Ficha Cadastral')
     arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
-    print("[red bold]ENTROU NA FUNÇÃO DE ENVIAR PARA O ARTERIA!!")
-    sleep(2)
-
     id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
     data_sub = {'Mês de Referência': [mes], 'Contracheque \ RPA': [f'{id}']}
     cadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Contracheque e RPA', id_sistema)
