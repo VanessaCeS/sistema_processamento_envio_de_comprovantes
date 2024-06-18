@@ -8,6 +8,8 @@ search_xml = """<SearchReport id="18204" name="Ficha Cadastral - Robo">
     <DisplayField>17960</DisplayField>
     <DisplayField>22104</DisplayField>
     <DisplayField>27311</DisplayField>
+    <DisplayField>17986</DisplayField>
+    <DisplayField>17985</DisplayField>
   </DisplayFields>
   <PageSize>50000</PageSize>
   <IsResultLimitPercent>False</IsResultLimitPercent>
@@ -31,8 +33,8 @@ search_xml = """<SearchReport id="18204" name="Ficha Cadastral - Robo">
           <IsNoSelectionIncluded>False</IsNoSelectionIncluded>
           <IncludeChildren>False</IncludeChildren>
           <Values>
-            <Value>131142</Value>
             <Value>71007</Value>
+            <Value>131142</Value>
           </Values>
         </ValueListFilterCondition>
       </Conditions>

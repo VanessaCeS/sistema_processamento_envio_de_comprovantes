@@ -19,4 +19,3 @@ def dividir_e_renomear_pdf_contra_cheque(caminho_pdf, mes_referencia):
                     print(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], data_upload)
                     enviar_folha_pagamento_arteria(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], data_upload)
     deletar_arquivos_pdf()        
-

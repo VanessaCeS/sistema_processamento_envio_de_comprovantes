@@ -1185,3 +1185,9 @@ def enviar_folha_pagamento_arteria(arquivo_pdf, mes, id_sistema, data):
     dado_update = {'Atualização Recibo': data}
     cadastrar_arteria(dado_update , 'Ficha Cadastral', id_sistema)
 
+def enviar_comprovante_arteria(arquivo_pdf, id_sistema):
+    instancia_arteria('Ficha Cadastral')
+    arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
+    id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
+    data_sub = {'Transferência de Conta Bancária': [f'{id}']}
+    icadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Contracheque e RPA', id_sistema)

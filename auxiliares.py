@@ -12,7 +12,15 @@ def encontrar_indice_linha(linhas, texto):
         return indice
   return None
 
+def encontrar_indices_linha(linhas, texto):
+  indices = []
+  for indice, linha in enumerate(linhas):
+    if texto.upper() in linha.upper().replace('  ', ' '):
+        indices.append(indice)
+  return indices
+
 def converter_string_mes(string):
+  if string:
     dividir_string = string.split('-')
     nome_mes = dividir_string[1]
     ano = dividir_string[0]
@@ -34,7 +42,9 @@ def converter_string_mes(string):
       if m in nome_mes:
         mes = dict_meses[m].upper()
     return f'{mes}/{ano}'
-
+  else: 
+    return None
+  
 def formatar_data_padra_arteria(data):
   ano, mes, dia = data.strip().split('-')
   data_padrao_arteria = f"{mes}/{dia}/{ano}"
@@ -61,21 +71,25 @@ def deletar_arquivos_pdf():
 def leitura_pdf(tipo, leitor_pdf, page_num):
   page = leitor_pdf.pages[page_num]
   text = page.extract_text()
-  with open(f'arquivos_txt/{tipo}_{page_num}.txt', 'w', encoding='utf-8') as f:
+  with open(f'txts/{tipo}_{page_num}.txt', 'w', encoding='utf-8') as f:
     f.write(text)
   if tipo == "rpas":
-    nome, documento = ler_extrair_dados_txt_rpa(f'arquivos_txt/{tipo}_{page_num}.txt')
+    nome, documento = page_num, ler_extrair_dados_txt_rpa(f'txts/{tipo}_{page_num}.txt')
+    return leitor_pdf, nome, documento
   elif tipo == "contra_cheque":
-    nome, documento = ler_extrair_dados_txt_cc(f'arquivos_txt/{tipo}_{page_num}.txt')
+    nome, documento = ler_extrair_dados_txt_cc(f'txts/{tipo}_{page_num}.txt')
+    return leitor_pdf, page_num, nome, documento 
+  elif tipo == "comprovante":
+    nome, agencia, conta_corrente = ler_extrair_dados_txt_comprovante(f'txts/{tipo}_{page_num}.txt') 
+    return leitor_pdf, page_num, nome, agencia, conta_corrente
 
-  return leitor_pdf, page_num,  nome, documento
 
 
-def alterar_nome_pdf(leitor_pdf, page_num, mes_referencia, nome):
+def alterar_nome_pdf(leitor_pdf, page_num, mes_referencia, nome, tipo=None):  
   escritor_pdf = PdfWriter()
   escritor_pdf.add_page(leitor_pdf.pages[page_num])
   mes_arteria = converter_string_mes(mes_referencia)
-  novo_nome = f"{nome} - {mes_arteria.replace('/', ' ')}.pdf"
+  novo_nome = f"Comprovante de pagamento {nome} - conta salario.pdf" if tipo == "comprovante" else f"{nome} - {mes_arteria.replace('/', ' ')}.pdf"
   with open(novo_nome, 'wb') as novo_arquivo:
       escritor_pdf.write(novo_arquivo)
 
@@ -99,3 +113,13 @@ def ler_extrair_dados_txt_cc(arquivo_txt):
   documento = linhas[indice_documento].split(':',2)[1].replace('CPF', '').replace('.','').replace('-','').strip()
   return nome, documento
 
+def ler_extrair_dados_txt_comprovante(arquivo_txt):
+  with open(arquivo_txt, 'r', encoding='utf-8') as f:
+      linhas = f.readlines()
+  indice_nome = encontrar_indice_linha(linhas, 'NOME:')
+  indice_agencia_conta = encontrar_indices_linha(linhas, "AGÊNCIA")
+  nome = linhas[indice_nome].split(":")[1].strip()
+  agencia = linhas[indice_agencia_conta[-1]].split(':')[1].replace("Conta corrente", "").strip()
+  conta_corrente = ''.join(filter(str.isdigit, linhas[indice_agencia_conta[-1]].split(':')[-1].strip()))
+  return nome, agencia, conta_corrente
+    
