@@ -29,7 +29,6 @@ class Record:
 					LIST of values for values list, including parent value in leveled values list. Looks like this [Parent Value:Value]
 					TODO other types of fields
 		"""
-
 		field_id = self.archer_instance.get_field_id_by_name(field_name)
 		field_type = self.json["FieldContents"][str(field_id)]["Type"]
 

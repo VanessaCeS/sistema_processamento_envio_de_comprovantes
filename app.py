@@ -84,7 +84,6 @@ def cadastrar_folha_pagamento():
             arquivos = request.files.getlist('arquivo[]')
             caminho_arquivo = []
             for arquivo in arquivos:
-                print(arquivos)
                 if arquivo.filename == '':
                     flash('Nenhum arquivo selecionado para upload')
                     return redirect(request.url)

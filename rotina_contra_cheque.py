@@ -16,6 +16,5 @@ def dividir_e_renomear_pdf_contra_cheque(caminho_pdf, mes_referencia):
                 if remover_acentos(dado['Nome']) == nome and dado['CPF \\ CNPJ'].replace('.','').replace('-','').strip() == documento:
                     data_upload = data_corrente_formatada()
                     data_upload = adjust_date_to_arteria(data_upload)
-                    print(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], data_upload)
                     enviar_folha_pagamento_arteria(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], data_upload)
     deletar_arquivos_pdf()        

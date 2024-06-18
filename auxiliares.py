@@ -57,10 +57,10 @@ def data_corrente_formatada():
 
 def deletar_arquivos_pdf():
     diretorio_pdf = os.getenv("diretorio_comprovantes")
-    diretorio_txt = os.getenv("diretorio_comprovantes") + '/arquivos_txt'
-    diretorio_pdfs = os.getenv("diretorio_comprovantes") + '/pdfs'
+    diretorio_txt = os.getenv("diretorio_comprovantes") + '/txts'
+    # diretorio_pdfs = os.getenv("diretorio_comprovantes") + '/pdfs'
     
-    diretorios = [diretorio_pdf, diretorio_txt, diretorio_pdfs]
+    diretorios = [diretorio_pdf, diretorio_txt]
     for diretorio in diretorios:
       arquivos = os.listdir(diretorio)
       for arquivo in arquivos:

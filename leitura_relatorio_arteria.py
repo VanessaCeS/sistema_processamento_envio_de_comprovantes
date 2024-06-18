@@ -10,7 +10,21 @@ search_xml = """<SearchReport id="18204" name="Ficha Cadastral - Robo">
     <DisplayField>27311</DisplayField>
     <DisplayField>17986</DisplayField>
     <DisplayField>17985</DisplayField>
+    <DisplayField>24720</DisplayField>
+    <DisplayField>24718</DisplayField>
+    <DisplayField>24719</DisplayField>
+    <DisplayField>27109</DisplayField>
   </DisplayFields>
+  <ContainedDisplayFields>
+    <ContainedDisplayField>
+      <Field>24720</Field>
+      <DisplayFields>
+        <DisplayField>24718</DisplayField>
+        <DisplayField>24719</DisplayField>
+        <DisplayField>27109</DisplayField>
+      </DisplayFields>
+    </ContainedDisplayField>
+  </ContainedDisplayFields>
   <PageSize>50000</PageSize>
   <IsResultLimitPercent>False</IsResultLimitPercent>
   <Criteria>
@@ -58,3 +72,4 @@ def get_dados_ficha_cadastral(search_xml):
     dados = search(search_xml)
     return dados
 
+# get_dados_ficha_cadastral(search_xml)

@@ -7,7 +7,8 @@ import util
 import datetime
 import requests
 import xmltodict
-from time import time
+from rich import print
+from time import sleep, time
 from requests import Session
 from dotenv import load_dotenv
 import xml.etree.ElementTree as ET
@@ -1179,15 +1180,21 @@ def transformar_arquivo_para_base64(nome_arquivo):
 def enviar_folha_pagamento_arteria(arquivo_pdf, mes, id_sistema, data):
     instancia_arteria('Ficha Cadastral')
     arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
+    print("[red bold]ENTROU NA FUNÇÃO DE ENVIAR PARA O ARTERIA!!")
+    sleep(2)
+
     id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
     data_sub = {'Mês de Referência': [mes], 'Contracheque \ RPA': [f'{id}']}
     cadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Contracheque e RPA', id_sistema)
     dado_update = {'Atualização Recibo': data}
     cadastrar_arteria(dado_update , 'Ficha Cadastral', id_sistema)
 
-def enviar_comprovante_arteria(arquivo_pdf, id_sistema):
+def enviar_comprovante_arteria(arquivo_pdf, mes, id_sistema, id_recibo):
     instancia_arteria('Ficha Cadastral')
     arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
     id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
-    data_sub = {'Transferência de Conta Bancária': [f'{id}']}
-    icadastrar_e_vincular_subf(data_sub , 'Ficha Cadastral', 'Contracheque e RPA', id_sistema)
+    data_sub = {'Mês de Referência': [mes], 'Transferência de Conta Bancária': [f'{id}']}
+    id_arteria = archer_instance.update_sub_record(data_sub,  'Contracheque e RPA', id_recibo)
+    print(f"[red bold italic]--->>> {id_arteria}")
+    cadastrar_arteria({} , 'Ficha Cadastral', id_sistema)
+
