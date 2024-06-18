@@ -64,7 +64,11 @@
       var botaoEnviar = document.getElementById('botao-enviar')
       console.log(botaoEnviar)
       if (tipoSelecionado && mesSelecionado && arquivoSelecionado.length > 0) {
-        document.getElementById('overlay').style.display = 'block';
+        if (botaoEnviar) {
+          botaoEnviar.addEventListener("click", function () {
+            document.getElementById('overlay').style.display = 'block';
+          });
+        }
       }
       else if (!tipoSelecionado && !mesSelecionado) {
 
