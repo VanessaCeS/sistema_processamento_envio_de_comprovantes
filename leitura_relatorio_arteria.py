@@ -72,4 +72,3 @@ def get_dados_ficha_cadastral(search_xml):
     dados = search(search_xml)
     return dados
 
-# get_dados_ficha_cadastral(search_xml)
