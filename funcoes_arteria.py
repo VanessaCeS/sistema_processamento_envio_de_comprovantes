@@ -1168,7 +1168,6 @@ def pegar_arquivo(nome,diretorio):
     arquivos_filtrados = [arquivo for arquivo in arquivos if arquivo.startswith(prefixo)]
     if arquivos_filtrados:
         arquivo_mais_novo = max(arquivos_filtrados, key=lambda arquivo: os.path.getmtime(os.path.join(diretorio, arquivo)))
-        print("Arquivo mais novo:", arquivo_mais_novo)
         return arquivo_mais_novo
         
 def transformar_arquivo_para_base64(nome_arquivo):
@@ -1186,11 +1185,11 @@ def enviar_folha_pagamento_arteria(arquivo_pdf, mes, id_sistema, data):
     dado_update = {'Atualização Recibo': data}
     cadastrar_arteria(dado_update , 'Ficha Cadastral', id_sistema)
 
-def enviar_comprovante_arteria(arquivo_pdf, mes, id_sistema, id_recibo):
+def enviar_comprovante_arteria(arquivo_pdf, id_sistema, id_recibo):
     instancia_arteria('Ficha Cadastral')
     arquivo_base_64 = transformar_arquivo_para_base64(arquivo_pdf)
     id = archer_instance.post_attachment(arquivo_pdf,arquivo_base_64)
-    data_sub = {'Mês de Referência': [mes], 'Transferência de Conta Bancária': [f'{id}']}
+    data_sub = {'Transferência de Conta Bancária': [f'{id}']}
     id_arteria = archer_instance.update_sub_record(data_sub,  'Contracheque e RPA', id_recibo)
     print(f"[red bold italic]--->>> {id_arteria}")
     cadastrar_arteria({} , 'Ficha Cadastral', id_sistema)
