@@ -1168,7 +1168,6 @@ def pegar_arquivo(nome,diretorio):
     arquivos_filtrados = [arquivo for arquivo in arquivos if arquivo.startswith(prefixo)]
     if arquivos_filtrados:
         arquivo_mais_novo = max(arquivos_filtrados, key=lambda arquivo: os.path.getmtime(os.path.join(diretorio, arquivo)))
-        print("Arquivo mais novo:", arquivo_mais_novo)
         return arquivo_mais_novo
         
 def transformar_arquivo_para_base64(nome_arquivo):

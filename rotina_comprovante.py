@@ -10,7 +10,6 @@ dados = get_dados_ficha_cadastral(search_xml)
 def dividir_e_renomear_pdf_comprovante(arquivos, mes_referencia):
   erros = []
   for arquivo in arquivos:
-    print(f"[red]ENTROU NO ARQUIVO {arquivo}")
     with open(arquivo, 'rb') as arquivo_pdf:
       leitor_pdf = PdfReader(arquivo_pdf)
       for page_num in range(len(leitor_pdf.pages)):
@@ -25,24 +24,18 @@ def dividir_e_renomear_pdf_comprovante(arquivos, mes_referencia):
                   if 'Mês de Referência' in d:
                     if d['Mês de Referência'][0] == mes_arteria and d['Mês de Referência']:
                       if numero_conta == conta_corrente and dado['Agência'] == agencia:
-                        id = d['id']
-                        enviar_comprovante_arteria(novo_nome, dado['ID do Sistema - Ficha Cadastral'], id)
+                        enviar_comprovante_arteria(novo_nome, dado['ID do Sistema - Ficha Cadastral'], d['id'])
                       else:
-                          print(f"[magenta]Numero da agencia ou conta não batem {dado['Nome']}")
-                          erros.append(f"{dado['Nome']} - Número da agência ou conta não estão corretos")
+                        erros.append(f"{dado['Nome']} - Número da agência ou conta não estão corretos")
                     else:
-                      print(f"[blue]O mes referencia não tem no arteria {dado['Nome']}")
                       erros.append(f"{dado['Nome']} - Não há mês correspondente no arteria")
                   elif 'Mês de Referência' in d[0] and d[0]['Mês de Referência']:
                       if  d[0]['Mês de Referência'][0] == mes_arteria:
                         if numero_conta == conta_corrente and dado['Agência'] == agencia:
-                          id = d[0]['id']
-                          enviar_comprovante_arteria(novo_nome, dado['ID do Sistema - Ficha Cadastral'], id)
+                          enviar_comprovante_arteria(novo_nome, dado['ID do Sistema - Ficha Cadastral'], d[0]['id'])
                         else:
-                          print(f"[magenta]Numero da agencia ou conta não batem {dado['Nome']}")
                           erros.append(f"{dado['Nome']} - Número da agência ou conta não estão corretos")
                       else:
-                        print(f"[blue]O mes referencia não tem no arteria {dado['Nome']}")
                         erros.append(f"{dado['Nome']} - Não há mês correspondente no arteria")
               else:
                 erros.append(f"{dado['Nome']} - Nome Bancário no arteria diverge o comprovante")
