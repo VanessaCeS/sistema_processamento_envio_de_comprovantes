@@ -97,11 +97,15 @@ def cadastrar_folha_pagamento():
             tipo = request.form['pagamento']
             mes_referencia = request.form['mes_referencia']
             if tipo == 'contra_cheque':
-                dividir_e_renomear_pdf_contra_cheque(arquivo_salvo, mes_referencia)
+                mensagem, color = dividir_e_renomear_pdf_contra_cheque(arquivo_salvo, mes_referencia)
+                return render_template('cadastrar_folha_pagamento.html',  mensagem=mensagem, color=color)
             elif tipo == 'rpas':
-                dividir_e_renomear_pdf_rpas(arquivo_salvo, mes_referencia)
+                mensagem, color = dividir_e_renomear_pdf_rpas(arquivo_salvo, mes_referencia)
+                return render_template('cadastrar_folha_pagamento.html',  mensagem=mensagem, color=color)
             elif tipo == 'comprovante':
-                dividir_e_renomear_pdf_comprovante(caminho_arquivo, mes_referencia)
+                mensagem, color = dividir_e_renomear_pdf_comprovante(caminho_arquivo, mes_referencia)
+                print(mensagem)
+                return render_template('cadastrar_folha_pagamento.html',  mensagem=mensagem, color=color)
             flash('Dados enviados e serão processados.')
             return redirect('/folha-pagamento')  
     except:

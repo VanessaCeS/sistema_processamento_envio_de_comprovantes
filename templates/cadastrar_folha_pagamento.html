@@ -62,7 +62,6 @@
       var arquivoSelecionado = document.getElementById("arquivo").files
       var mesSelecionado = document.getElementById("mes_referencia").value
       var botaoEnviar = document.getElementById('botao-enviar')
-      console.log(botaoEnviar)
       if (tipoSelecionado && mesSelecionado && arquivoSelecionado.length > 0) {
         if (botaoEnviar) {
           botaoEnviar.addEventListener("click", function () {
@@ -100,20 +99,27 @@
   </script>
   {% if mensagem %}
   <script>
-    Toastify({
-      text: "{{ mensagem }}",
-      position: "right",
-      autoClose: 50000,
-      hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-      backgroundColor: "{{color}}",
-    }).showToast();
+    var mensagens = {{ mensagem | tojson | safe }};
+
+    mensagens.forEach(function (msg) {
+      Toastify({
+        text: msg,
+        position: "right",
+        autoClose: true,
+        duration: 15000,
+        close: true,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        backgroundColor: "{{color}}",
+      }).showToast();
+    });
   </script>
   {% endif %}
+
 </body>
 
 </html>

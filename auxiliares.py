@@ -122,4 +122,3 @@ def ler_extrair_dados_txt_comprovante(arquivo_txt):
   agencia = linhas[indice_agencia_conta[-1]].split(':')[1].replace("Conta corrente", "").strip()
   conta_corrente = ''.join(filter(str.isdigit, linhas[indice_agencia_conta[-1]].split(':')[-1].strip()))
   return nome, agencia, conta_corrente
-    

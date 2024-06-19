@@ -1,3 +1,4 @@
+import traceback
 from rich import print
 from PyPDF2 import PdfReader
 from funcoes_arteria import enviar_comprovante_arteria
@@ -7,30 +8,53 @@ from leitura_relatorio_arteria import get_dados_ficha_cadastral, search_xml
 dados = get_dados_ficha_cadastral(search_xml)
 
 def dividir_e_renomear_pdf_comprovante(arquivos, mes_referencia):
+  erros = []
   for arquivo in arquivos:
+    print(f"[red]ENTROU NO ARQUIVO {arquivo}")
     with open(arquivo, 'rb') as arquivo_pdf:
       leitor_pdf = PdfReader(arquivo_pdf)
       for page_num in range(len(leitor_pdf.pages)):
-        leitor_pdf, page_num,  nome, agencia, conta_corrente = leitura_pdf("comprovante", leitor_pdf, page_num)
+        leitor_pdf, page_num, nome, agencia, conta_corrente = leitura_pdf("comprovante", leitor_pdf, page_num)
         novo_nome, mes_arteria = alterar_nome_pdf(leitor_pdf, page_num, mes_referencia, nome, "comprovante")
-        mes_arteria = "MAIO/2024"
         for dado in dados:
           try:
-            if dado["Contracheque e RPA"] and dado["Nome bancário"] == nome:
-              for d in dado["Contracheque e RPA"]:
-                numero_conta = ''.join(filter(str.isdigit, dado['Nº da Conta'].split(':')[-1].strip()))
-                if 'Mês de Referência' in d:
-                  if d['Mês de Referência'][0] == mes_arteria and d['Mês de Referência']:
-                    if numero_conta == conta_corrente and dado['Agência'] == agencia:
-                                        id = d['id']
-                                        enviar_comprovante_arteria(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], id)
-                elif 'Mês de Referência' in d[0] and d[0]['Mês de Referência']:
-                    if  d[0]['Mês de Referência'][0] == mes_arteria:
+            if dado["Contracheque e RPA"]:
+              if dado["Nome bancário"] == nome:
+                for d in dado["Contracheque e RPA"]:
+                  numero_conta = ''.join(filter(str.isdigit, dado['Nº da Conta'].split(':')[-1].strip()))
+                  if 'Mês de Referência' in d:
+                    if d['Mês de Referência'][0] == mes_arteria and d['Mês de Referência']:
                       if numero_conta == conta_corrente and dado['Agência'] == agencia:
-                        id = d[0]['id']
-                        enviar_comprovante_arteria(novo_nome, mes_arteria, dado['ID do Sistema - Ficha Cadastral'], id)
-          except:
-            continue
-  deletar_arquivos_pdf()        
+                        id = d['id']
+                        enviar_comprovante_arteria(novo_nome, dado['ID do Sistema - Ficha Cadastral'], id)
+                      else:
+                          print(f"[magenta]Numero da agencia ou conta não batem {dado['Nome']}")
+                          erros.append(f"{dado['Nome']} - Número da agência ou conta não estão corretos")
+                    else:
+                      print(f"[blue]O mes referencia não tem no arteria {dado['Nome']}")
+                      erros.append(f"{dado['Nome']} - Não há mês correspondente no arteria")
+                  elif 'Mês de Referência' in d[0] and d[0]['Mês de Referência']:
+                      if  d[0]['Mês de Referência'][0] == mes_arteria:
+                        if numero_conta == conta_corrente and dado['Agência'] == agencia:
+                          id = d[0]['id']
+                          enviar_comprovante_arteria(novo_nome, dado['ID do Sistema - Ficha Cadastral'], id)
+                        else:
+                          print(f"[magenta]Numero da agencia ou conta não batem {dado['Nome']}")
+                          erros.append(f"{dado['Nome']} - Número da agência ou conta não estão corretos")
+                      else:
+                        print(f"[blue]O mes referencia não tem no arteria {dado['Nome']}")
+                        erros.append(f"{dado['Nome']} - Não há mês correspondente no arteria")
+              else:
+                erros.append(f"{dado['Nome']} - Nome Bancário no arteria diverge o comprovante")
+          except Exception as e:
+            print(f"[red]Erro -->>{e}")
+            print(traceback.print_exc())
     
-
+  deletar_arquivos_pdf()
+  if erros:
+      erros.append("Os outros dados foram salvos normalmente!")
+      return erros, "#ff0000"
+  else:
+      return ["Comprovantes anexados com sucesso!"], "#32965D"
+  
+  
