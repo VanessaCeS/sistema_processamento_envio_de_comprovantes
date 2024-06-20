@@ -71,18 +71,20 @@ def deletar_arquivos_pdf():
 def leitura_pdf(tipo, leitor_pdf, page_num):
   page = leitor_pdf.pages[page_num]
   text = page.extract_text()
-  with open(f'txts/{tipo}_{page_num}.txt', 'w', encoding='utf-8') as f:
-    f.write(text)
-  if tipo == "rpas":
-    nome, documento = page_num, ler_extrair_dados_txt_rpa(f'txts/{tipo}_{page_num}.txt')
-    return leitor_pdf, nome, documento
-  elif tipo == "contra_cheque":
-    nome, documento = ler_extrair_dados_txt_cc(f'txts/{tipo}_{page_num}.txt')
-    return leitor_pdf, page_num, nome, documento 
-  elif tipo == "comprovante":
-    nome, agencia, conta_corrente = ler_extrair_dados_txt_comprovante(f'txts/{tipo}_{page_num}.txt') 
-    return leitor_pdf, page_num, nome, agencia, conta_corrente
+  arquivo_txt = f'txts/{tipo}_{page_num}.txt'
 
+  with open(arquivo_txt, 'w', encoding='utf-8') as f:
+    f.write(text)
+    
+  if tipo == "rpas":
+    nome, documento = page_num, ler_extrair_dados_txt_rpa(arquivo_txt)
+    return leitor_pdf, nome, documento, arquivo_txt
+  elif tipo == "contra_cheque":
+    nome, documento = ler_extrair_dados_txt_cc(arquivo_txt)
+    return leitor_pdf, page_num, nome, documento, arquivo_txt
+  elif tipo == "comprovante":
+    nome, agencia, conta_corrente = ler_extrair_dados_txt_comprovante(arquivo_txt) 
+    return leitor_pdf, page_num, nome, agencia, conta_corrente, arquivo_txt
 
 
 def alterar_nome_pdf(leitor_pdf, page_num, mes_referencia, nome, tipo=None):  
@@ -96,17 +98,19 @@ def alterar_nome_pdf(leitor_pdf, page_num, mes_referencia, nome, tipo=None):
   return novo_nome, mes_arteria
 
 def ler_extrair_dados_txt_rpa(arquivo_txt):
-  with open(arquivo_txt, 'r', encoding='utf-8') as f:
-    linhas = f.readlines()
+  linhas = ler_arquivo_txt(arquivo_txt)
   indice_nome = encontrar_indice_linha(linhas, 'VALOR LÍQUIDO:')
   indice_documento = encontrar_indice_linha(linhas, 'CPF:')
   nome = linhas[indice_nome + 1].split(' ', 1)[1].replace('\n', '').strip()
   documento = linhas[indice_documento].split(':')[1].strip()
   return nome, documento
 
-def ler_extrair_dados_txt_cc(arquivo_txt):
+def ler_arquivo_txt(arquivo_txt):
   with open(arquivo_txt, 'r', encoding='utf-8') as f:
-    linhas = f.readlines()
+    return f.readlines()
+
+def ler_extrair_dados_txt_cc(arquivo_txt):
+  linhas = ler_arquivo_txt(arquivo_txt)
   indice_nome = encontrar_indice_linha(linhas, 'CÓDIGO:')
   indice_documento = encontrar_indice_linha(linhas, 'NÍVEL:')
   nome = linhas[indice_nome].split(' ', 2)[2].replace('\n', '').strip()
@@ -114,11 +118,15 @@ def ler_extrair_dados_txt_cc(arquivo_txt):
   return nome, documento
 
 def ler_extrair_dados_txt_comprovante(arquivo_txt):
-  with open(arquivo_txt, 'r', encoding='utf-8') as f:
-      linhas = f.readlines()
+  linhas = ler_arquivo_txt(arquivo_txt)
   indice_nome = encontrar_indice_linha(linhas, 'NOME:')
   indice_agencia_conta = encontrar_indices_linha(linhas, "AGÊNCIA")
   nome = linhas[indice_nome].split(":")[1].strip()
   agencia = linhas[indice_agencia_conta[-1]].split(':')[1].replace("Conta corrente", "").strip()
   conta_corrente = ''.join(filter(str.isdigit, linhas[indice_agencia_conta[-1]].split(':')[-1].strip()))
   return nome, agencia, conta_corrente
+
+def verificar_tipo_arquivo(arquivo_txt, tipo):
+  linhas = ler_arquivo_txt(arquivo_txt)
+  indice_tipo = str(encontrar_indice_linha(linhas, tipo)) if encontrar_indice_linha(linhas, tipo) != None else None
+  return True if indice_tipo else False
